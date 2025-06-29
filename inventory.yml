@@ -1,0 +1,653 @@
+all:
+  hosts:
+    AGROINDUSTRIAS_DEV2021:
+      ansible_host: 158.23.185.98
+      ansible_user: root
+    AGROINDUSTRIAS_QAS:
+      ansible_host: 158.23.186.68
+      ansible_user: root
+    AGROINDUSTRIAS_S4HANA-PRO:
+      ansible_host: 158.23.90.226
+      ansible_user: root
+    AGROINDUSTRIAS_SAPSOLMAN:
+      ansible_host: 158.23.84.219
+      ansible_user: root
+    AGROINDUSTRIAS_WEBDISP:
+      ansible_host: 158.23.84.216
+      ansible_user: root
+    AIRQUALITY_SUSE:
+      ansible_host: 101.44.186.89
+      ansible_user: root
+    AIRQUALITY__WINDOWS:
+      ansible_host: 101.44.27.115
+      ansible_user: root
+    ALLDORA_ECS2022:
+      ansible_host: 122.8.189.158
+      ansible_user: root
+    APEOTACTICO_FIORI:
+      ansible_host: 119.8.2.39
+      ansible_user: root
+    APEOTACTICO_S4HANADEV:
+      ansible_host: 94.74.71.113
+      ansible_user: root
+    APEOTACTICO_S4HANAPRO:
+      ansible_host: 119.8.9.198
+      ansible_user: root
+    ATC_S4HANAPRO:
+      ansible_host: 119.8.8.179
+      ansible_user: root
+    ATC_S4HANAPRO_CLON:
+      ansible_host: 122.8.190.139
+      ansible_user: root
+    ATC_atcamiones1:
+      ansible_host: 110.238.81.5
+      ansible_user: root
+    AYALA_ERPPRO:
+      ansible_host: 122.8.187.141
+      ansible_user: root
+    AYALA_SAPROUTER_CLON:
+      ansible_host: 122.8.187.144
+      ansible_user: root
+    BRULUART_BRUDI_DRP:
+      ansible_host: 94.74.67.176
+      ansible_user: root
+    BRULUART_BRUWIN:
+      ansible_host: 101.44.27.249
+      ansible_user: root
+    BRULUART_ECSSQL:
+      ansible_host: 122.8.181.165
+      ansible_user: root
+    BRULU_CONTPAQ:
+      ansible_host: 122.8.179.144
+      ansible_user: root
+    BRULU_QASDEV:
+      ansible_host: 110.238.82.99
+      ansible_user: root
+    BRULU_SAPPRO1:
+      ansible_host: 122.8.181.120
+      ansible_user: root
+    BSTPortal_ECS:
+      ansible_host: 110.238.80.127
+      ansible_user: root
+    BST_BST:
+      ansible_host: 122.8.183.14
+      ansible_user: root
+    CLON_MARBER:
+      ansible_host: 122.8.179.198
+      ansible_user: root
+    CLON_MARBER_OLD:
+      ansible_host: 119.8.1.185
+      ansible_user: root
+    CLUBERS_APPPRO:
+      ansible_host: 119.8.8.30
+      ansible_user: root
+    CLUBERS_S4HANADEV:
+      ansible_host: 110.238.83.225
+      ansible_user: root
+    CLUBERS_WDispDeV:
+      ansible_host: 110.238.82.98
+      ansible_user: root
+    CORTINA_CORTINA1:
+      ansible_host: 94.74.76.54
+      ansible_user: root
+    CORTINA_CORTINAODOO:
+      ansible_host: 122.8.191.144
+      ansible_user: root
+    CORTINA_Desarrollo:
+      ansible_host: 122.8.189.123
+      ansible_user: root
+    CORTINA_Desarrollov17:
+      ansible_host: 94.74.70.174
+      ansible_user: root
+    CORTINA_Desarrollov17Clon:
+      ansible_host: 94.74.76.205
+      ansible_user: root
+    CORTINA_ODOO_1:
+      ansible_host: 94.74.76.205
+      ansible_user: root
+    CUADRITOS_SAPDES:
+      ansible_host: 94.74.71.232
+      ansible_user: root
+    CUADRITOS_SAPPRO:
+      ansible_host: 94.74.65.146
+      ansible_user: root
+    CUADRITOS_SAPQAS:
+      ansible_host: 94.74.74.27
+      ansible_user: root
+    CUERVO_PO_DEV:
+      ansible_host: 54.243.52.86
+      ansible_user: root
+    CUERVO_PO_PRO:
+      ansible_host: 34.228.72.94
+      ansible_user: root
+    CUERVO_PO_QAS:
+      ansible_host: 54.156.228.116
+      ansible_user: root
+    CUERVO_saprouter_PO:
+      ansible_host: 35.171.13.178
+      ansible_user: root
+    Casa_Dragones_SAP01:
+      ansible_host: 54.69.184.158
+      ansible_user: root
+    DACSA-ERPPRO:
+      ansible_host: 110.238.84.29
+      ansible_user: root
+    DACSA-SAPROUTER:
+      ansible_host: 101.44.185.251
+      ansible_user: root
+    DACSA_CRM:
+      ansible_host: 101.44.184.40
+      ansible_user: root
+    DACSA_LINUXDACSA:
+      ansible_host: 101.44.24.169
+      ansible_user: root
+    DEGASA_DEGASA:
+      ansible_host: 52.118.79.67
+      ansible_user: root
+    DEGASA_DOCUMENTACION:
+      ansible_host: 52.117.14.135
+      ansible_user: root
+    DHSUSE:
+      ansible_host: 47.89.130.24
+      ansible_user: root
+    DH_Windows:
+      ansible_host: 47.252.44.8
+      ansible_user: root
+    DOMINION_BD:
+      ansible_host: 23.22.236.18
+      ansible_user: root
+    DOMINION_WEB:
+      ansible_host: 100.24.139.113
+      ansible_user: root
+    DYN_DEV:
+      ansible_host: 172.16.0.123
+      ansible_user: root
+    DYN_PRO:
+      ansible_host: 122.8.183.248
+      ansible_user: root
+    DYN_SAPROUTER:
+      ansible_host: 101.44.27.56
+      ansible_user: root
+    DYN_qasdyn:
+      ansible_host: 122.8.186.69
+      ansible_user: root
+    ECS-ANSIBLE:
+      ansible_host: 47.85.111.7
+      ansible_user: root
+    ECS_MARBER1:
+      ansible_host: 122.8.186.127
+      ansible_user: root
+    EMERSON_EMERSONDESWS:
+      ansible_host: 150.240.151.238
+      ansible_user: root
+    EMERSON_PRO-APLICATIVO:
+      ansible_host: 150.240.151.235
+      ansible_user: root
+    EMERSON_PRO-DB:
+      ansible_host: 169.46.125.69
+      ansible_user: root
+    EMERSON_PROEMERSONWS:
+      ansible_host: 150.240.151.239
+      ansible_user: root
+    EMERSON_WEBSERPRO:
+      ansible_host: 169.46.125.68
+      ansible_user: root
+    EMERSON_WEBSERQAS:
+      ansible_host: 150.240.151.237
+      ansible_user: root
+    ENABLE_BW4HANA:
+      ansible_host: 122.8.190.60
+      ansible_user: root
+    ENABLE_ENABLE:
+      ansible_host: 94.74.75.80
+      ansible_user: root
+    ENABLE_ENABLE001N:
+      ansible_host: 122.8.183.23
+      ansible_user: root
+    ENABLE_ENABLE004:
+      ansible_host: 122.8.181.97
+      ansible_user: root
+    ENABLE_ENABLE006N:
+      ansible_host: 101.44.27.237
+      ansible_user: root
+    ENABLE_ENABLEPRO:
+      ansible_host: 94.74.77.10
+      ansible_user: root
+    ENABLE_MEGADEV00:
+      ansible_host: 52.118.8.216
+      ansible_user: root
+    ENABLE_MEGAPRO00:
+      ansible_host: 52.118.8.222
+      ansible_user: root
+    ENABLE_MEGAQAS00:
+      ansible_host: 52.118.8.211
+      ansible_user: root
+    ENABLE_S4HANA:
+      ansible_host: 122.8.191.47
+      ansible_user: root
+    ENABLE_TERMSERV:
+      ansible_host: 94.74.71.249
+      ansible_user: root
+    ENABLE_TST:
+      ansible_host: 122.8.189.45
+      ansible_user: root
+    EZETERA_ECS:
+      ansible_host: 8.221.123.145
+      ansible_user: root
+    EZETERA_SAP:
+      ansible_host: 47.90.132.178
+      ansible_user: root
+    EZETERA_SQL:
+      ansible_host: 47.252.19.234
+      ansible_user: root
+    FARMAPIEL_ASPEL-COI:
+      ansible_host: 119.8.11.41
+      ansible_user: root
+    FARMAPIEL_DISENO-BI:
+      ansible_host: 94.74.65.57
+      ansible_user: root
+    FARMAPIEL_ECS:
+      ansible_host: 94.74.77.17
+      ansible_user: root
+    FARMAPIEL_SAPHANAN:
+      ansible_host: 119.8.10.128
+      ansible_user: root
+    FARMAPIEL_SAPWINN:
+      ansible_host: 94.74.72.106
+      ansible_user: root
+    FKFRIDA:
+      ansible_host: 122.8.185.212
+      ansible_user: root
+    FRESHKAMPO_AD:
+      ansible_host: 110.238.80.165
+      ansible_user: root
+    FRESHKAMPO_CITRIXNEW:
+      ansible_host: 110.238.83.88
+      ansible_user: root
+    FRESHKAMPO_FAMOUS2019:
+      ansible_host: 122.8.181.2
+      ansible_user: root
+    FRESHKAMPO_FK2:
+      ansible_host: 110.238.83.163
+      ansible_user: root
+    FRESHKAMPO_OPENVPN:
+      ansible_host: 110.238.85.202
+      ansible_user: root
+    FRESHKAMPO_SMARTAGRO:
+      ansible_host: 110.238.85.64
+      ansible_user: root
+    FRESHKAMPO_WIN:
+      ansible_host: 110.238.80.182
+      ansible_user: root
+    FRIDA_WIN:
+      ansible_host: 110.238.85.237
+      ansible_user: root
+    Farmaamigo_AplicativoPRO:
+      ansible_host: 110.238.82.212
+      ansible_user: root
+    Farmaamigo_AplicativoQAS:
+      ansible_host: 122.8.178.177
+      ansible_user: root
+    Farmaamigo_HANA2:
+      ansible_host: 122.8.178.100
+      ansible_user: root
+    Farmaamigo_HANA3:
+      ansible_host: 110.238.83.43
+      ansible_user: root
+    Farmaamigo_SAPROUTER:
+      ansible_host: 110.238.80.8
+      ansible_user: root
+    Farmamigo_H4NAPRO:
+      ansible_host: 110.238.81.62
+      ansible_user: root
+    Farmapiel_PortalViaticos:
+      ansible_host: 101.46.209.237
+      ansible_user: root
+    GDG1:
+      ansible_host: 18.100.211.192
+      ansible_user: root
+    GDG2:
+      ansible_host: 18.101.159.19
+      ansible_user: root
+    GONVARRI_GIWVSITDBPVAL:
+      ansible_host: 10.22.10.12
+      ansible_user: root
+    GONVARRI_GIWVSITLMSPVAL:
+      ansible_host: 10.22.10.11
+      ansible_user: root
+    GONVARRI_GIWVSITUADMPVAL:
+      ansible_host: 10.22.10.10
+      ansible_user: root
+    GONVARRI_GIWVSitLMSPWrz:
+      ansible_host: 10.35.10.13
+      ansible_user: root
+    GONVARRI_GIWVSitUADMPWrz:
+      ansible_host: 10.35.10.11
+      ansible_user: root
+    GONVARRI_GNVWVSITAPPPGAL:
+      ansible_host: 10.34.10.20
+      ansible_user: root
+    GONVARRI_GNVWVSITAPPSC:
+      ansible_host: 10.54.10.10
+      ansible_user: root
+    GONVARRI_GNVWVSITDBGAL:
+      ansible_host: 10.34.10.22
+      ansible_user: root
+    GONVARRI_GNVWVSITDBPSC:
+      ansible_host: 10.54.10.12
+      ansible_user: root
+    GONVARRI_GNVWVSITLMSPGAL:
+      ansible_host: 10.34.10.21
+      ansible_user: root
+    GONVARRI_GNVWVSITLMSPSC:
+      ansible_host: 10.54.10.11
+      ansible_user: root
+    GONVARRI_GWSTRSAPMIIDB:
+      ansible_host: 10.45.10.12
+      ansible_user: root
+    GONVARRI_SAPGSSPOPRD:
+      ansible_host: 10.20.10.27
+      ansible_user: root
+    GONVARRI_griga-sapmii1:
+      ansible_host: 10.84.10.101
+      ansible_user: root
+    GROMO_APP:
+      ansible_host: 110.238.81.252
+      ansible_user: root
+    GROMO_BBDD:
+      ansible_host: 110.238.84.4
+      ansible_user: root
+    GROMO_ERPPRO:
+      ansible_host: 94.74.74.53
+      ansible_user: root
+    GROMO_Romobiomet:
+      ansible_host: 122.8.188.66
+      ansible_user: root
+    GROMO_SVRSQL:
+      ansible_host: 122.8.191.57
+      ansible_user: root
+    GR_SAPDES:
+      ansible_host: 119.8.1.143
+      ansible_user: root
+    GR_SAPQAS:
+      ansible_host: 94.74.67.17
+      ansible_user: root
+    GR_SAPROUTER:
+      ansible_host: 122.8.188.165
+      ansible_user: root
+    GR_SVRCOMPAQi:
+      ansible_host: 94.74.74.196
+      ansible_user: root
+    Gonvarri_GIWVSitDBPWrz:
+      ansible_host: 10.35.10.12
+      ansible_user: root
+    HOmega_ECS:
+      ansible_host: 122.8.183.80
+      ansible_user: root
+    ITZOIL_EmersonDesAPP:
+      ansible_host: 150.240.151.236
+      ansible_user: root
+    ITZOIL_EmersonDesBD:
+      ansible_host: 169.46.125.70
+      ansible_user: root
+    Josefina:
+      ansible_host: 110.238.80.92
+      ansible_user: root
+    K2PARTNERING:
+      ansible_host: 110.238.80.244
+      ansible_user: root
+    KRESTON_NUEVO:
+      ansible_host: 119.8.1.244
+      ansible_user: root
+    KRE_Kreston2023:
+      ansible_host: 119.8.10.119
+      ansible_user: root
+    MACMA_SAPERPPRODRP:
+      ansible_host: 122.8.183.41
+      ansible_user: root
+    MACMA_SAPROUTER:
+      ansible_host: 110.238.85.21
+      ansible_user: root
+    MARBER_BW4HANA:
+      ansible_host: 122.8.183.164
+      ansible_user: root
+    MARBER_CRMMARBER:
+      ansible_host: 122.8.179.20
+      ansible_user: root
+    MARBER_ECSCLON:
+      ansible_host: 122.8.182.84
+      ansible_user: root
+    MARBER_ERPPRO_SYBASE:
+      ansible_host: 122.8.182.236
+      ansible_user: root
+    MARBER_SAPROUTER:
+      ansible_host: 110.238.82.173
+      ansible_user: root
+    MARBER_WINDOWS:
+      ansible_host: 110.238.81.138
+      ansible_user: root
+    MARBER_WINMARBER:
+      ansible_host: 110.238.80.83
+      ansible_user: root
+    MARNOV_ERPPRO:
+      ansible_host: 110.238.80.13
+      ansible_user: root
+    MARNOV_SAPROUTER:
+      ansible_host: 110.238.80.197
+      ansible_user: root
+    MODATELAS:
+      ansible_host: 94.74.69.128
+      ansible_user: root
+    MODATELAS_CALIDAD:
+      ansible_host: 94.74.64.244
+      ansible_user: root
+    MODATELAS_CALIDADOLD:
+      ansible_host: 94.74.72.222
+      ansible_user: root
+    MODATELAS_presupuestos_old:
+      ansible_host: 119.8.8.190
+      ansible_user: root
+    MOYEL_APLICACION:
+      ansible_host: 94.74.67.155
+      ansible_user: root
+    MOYEL_HANA:
+      ansible_host: 94.74.71.221
+      ansible_user: root
+    MOYEL_Prizma:
+      ansible_host: 94.74.68.40
+      ansible_user: root
+    MUNDO_CUERVO_ERPDEV:
+      ansible_host: 94.74.65.218
+      ansible_user: root
+    MUNDO_CUERVO_ERP_QAS:
+      ansible_host: 119.8.10.110
+      ansible_user: root
+    MUNDO_CUERVO_FACTURACION:
+      ansible_host: 119.8.9.12
+      ansible_user: root
+    NATASA_ADS-Server:
+      ansible_host: 107.22.235.169
+      ansible_user: root
+    NATASA_PORTALPRO:
+      ansible_host: 52.206.196.191
+      ansible_user: root
+    NATASA_PORTAL_DES:
+      ansible_host: 52.72.114.58
+      ansible_user: root
+    NATASA_S4HANADEV_NUEVO:
+      ansible_host: 35.153.22.189
+      ansible_user: root
+    NATASA_SAP-CLOUD-AGENT1:
+      ansible_host: 54.88.45.159
+      ansible_user: root
+    NATASA_SAPROUTER1:
+      ansible_host: 107.20.204.21
+      ansible_user: root
+    NATASA_s4hanapro_1:
+      ansible_host: 3.215.127.14
+      ansible_user: root
+    NEFINTEC_IF:
+      ansible_host: 122.8.183.135
+      ansible_user: root
+    NEFINTEC_VERTICAL:
+      ansible_host: 122.8.184.139
+      ansible_user: root
+    NEFINTEC_cnefintec:
+      ansible_host: 46.250.163.56
+      ansible_user: root
+    NEFINTEC_hananuevo:
+      ansible_host: 122.8.182.70
+      ansible_user: root
+    Natasa_windows2022:
+      ansible_host: 34.227.138.120
+      ansible_user: root
+    ODPSUSE:
+      ansible_host: 8.221.102.76
+      ansible_user: root
+    ODPWINDOWS:
+      ansible_host: 47.90.218.91
+      ansible_user: root
+    Olmeca:
+      ansible_host: 122.8.186.89
+      ansible_user: root
+    PASTES_PASTEKO:
+      ansible_host: 94.74.66.149
+      ansible_user: root
+    Pas-Prettl_pasvpnp0:
+      ansible_host: 34.51.5.230
+      ansible_user: root
+    Present1RDP:
+      ansible_host: 101.44.189.146
+      ansible_user: root
+    Present1RDP_NEW:
+      ansible_host: 101.44.25.70
+      ansible_user: root
+    Present2:
+      ansible_host: 94.74.74.28
+      ansible_user: root
+    ProteinasNorte_HANDHELDPN:
+      ansible_host: 101.44.186.159
+      ansible_user: root
+    SANCHEZ_Hana_PRO:
+      ansible_host: 52.2.12.44
+      ansible_user: root
+    SANCHEZ_Hana_QAS:
+      ansible_host: 34.236.193.53
+      ansible_user: root
+    SANCHEZ_NetWeaver_PRO:
+      ansible_host: 34.231.99.206
+      ansible_user: root
+    SANCHEZ_NetWeaver_QAS:
+      ansible_host: 34.229.8.41
+      ansible_user: root
+    SANCHEZ_SAPROUTER:
+      ansible_host: 34.235.100.224
+      ansible_user: root
+    SDona_PROD:
+      ansible_host: 110.238.82.197
+      ansible_user: root
+    SINERGMAN_S4HANA-DEV-QAS:
+      ansible_host: 119.8.11.117
+      ansible_user: root
+    SINERGMAN_S4HANA-PRO:
+      ansible_host: 119.8.2.18
+      ansible_user: root
+    SINERGMAN_SAPROUTER:
+      ansible_host: 119.8.3.234
+      ansible_user: root
+    SPORTMEX_INTEGRACION:
+      ansible_host: 110.238.83.189
+      ansible_user: root
+    SPORTMEX_OPENVPN:
+      ansible_host: 110.238.80.108
+      ansible_user: root
+    SPORTMEX_SRVMCBO:
+      ansible_host: 101.44.186.247
+      ansible_user: root
+    SPORTMEX_SRVMCRP:
+      ansible_host: 122.8.184.14
+      ansible_user: root
+    SPORTMEX_SRVMCRPF:
+      ansible_host: 101.44.184.42
+      ansible_user: root
+    SPORTMEX_SRVRPRO:
+      ansible_host: 122.8.183.45
+      ansible_user: root
+    UTILITY_PRO:
+      ansible_host: 110.238.80.237
+      ansible_user: root
+    UTILITY_S4:
+      ansible_host: 110.238.80.213
+      ansible_user: root
+    UTILITY_WEBDISP:
+      ansible_host: 110.238.80.105
+      ansible_user: root
+    VIALLI_Corpomare:
+      ansible_host: 119.8.10.30
+      ansible_user: root
+    VIKOSOL_ACISAP:
+      ansible_host: 94.74.76.41
+      ansible_user: root
+    VIKOSOL_BalanceadorC3:
+      ansible_host: 101.44.25.2
+      ansible_user: root
+    VIKOSOL_CCCVIKO:
+      ansible_host: 110.238.84.71
+      ansible_user: root
+    VIKOSOL_ECSC3:
+      ansible_host: 122.8.179.171
+      ansible_user: root
+    VIKOSOL_RDP1VIKO:
+      ansible_host: 110.238.85.210
+      ansible_user: root
+    VIKOSOL_SAPCLOUD:
+      ansible_host: 122.8.178.70
+      ansible_user: root
+    VIKOSOL_b1hanapro_Nuevo:
+      ansible_host: 101.44.24.95
+      ansible_user: root
+    VIKOSOL_hanacockpit:
+      ansible_host: 94.74.70.83
+      ansible_user: root
+    VIKO_PRESENTADOR3-C3:
+      ansible_host: 122.8.182.161
+      ansible_user: root
+    VIKO_Presentador4-C3:
+      ansible_host: 110.238.81.23
+      ansible_user: root
+    VIKO_TrendMicroPruebas:
+      ansible_host: 34.58.53.46
+      ansible_user: root
+    VIKO_present1rdp:
+      ansible_host: 122.8.190.109
+      ansible_user: root
+    VOLVO_SAP-ERP-PRO:
+      ansible_host: 94.74.75.124
+      ansible_user: root
+    VOLVO_SAP_ERP_QAS:
+      ansible_host: 94.74.75.181
+      ansible_user: root
+    VikoWEB:
+      ansible_host: 101.44.187.68
+      ansible_user: root
+    VikoWEBNEW:
+      ansible_host: 46.250.160.72
+      ansible_user: root
+    Viko_linuxpruebas:
+      ansible_host: 94.74.67.251
+      ansible_user: root
+    Youland_APP:
+      ansible_host: 94.74.71.43
+      ansible_user: root
+    Youland_BD_1:
+      ansible_host: 94.74.70.66
+      ansible_user: root
+    dyn_CLONADO_FACTURACION:
+      ansible_host: 101.44.186.29
+      ansible_user: root
+    pasvpnp0_clon:
+      ansible_host: 34.51.44.198
+      ansible_user: root
+    servicebascula_new:
+      ansible_host: 94.74.69.136
+      ansible_user: root
