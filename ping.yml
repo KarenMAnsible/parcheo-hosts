@@ -1,7 +1,7 @@
 ---
 # This playbook uses the win_ping module to test connectivity to Windows hosts
 - name: Ping 
-  hosts: VIKO_TrendMicroPruebas 
+  hosts: trendmicropruebas
 
   tasks:
   - name: ping
