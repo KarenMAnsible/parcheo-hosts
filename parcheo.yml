@@ -1,6 +1,6 @@
 ---
-- name: Aplicar parches de Windows
-  hosts: windows
+- name: Parchear servidor Windows
+  hosts: VIKO_TrendMicroPruebas
   gather_facts: no
   tasks:
     - name: Instalar todas las actualizaciones disponibles
