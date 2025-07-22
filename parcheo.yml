@@ -1,6 +1,6 @@
 ---
 - name: Parchear servidor Windows
-  hosts: trendmicropruebas
+  hosts: 34.58.53.46
   gather_facts: no
   tasks:
     - name: Instalar todas las actualizaciones disponibles
