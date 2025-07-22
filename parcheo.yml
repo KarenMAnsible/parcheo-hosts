@@ -1,6 +1,6 @@
 ---
 - name: Parchear servidor Windows
-  hosts: VIKO_TrendMicroPruebas
+  hosts: trendmicropruebas
   gather_facts: no
   tasks:
     - name: Instalar todas las actualizaciones disponibles
