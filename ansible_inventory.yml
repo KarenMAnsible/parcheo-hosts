@@ -1,0 +1,1666 @@
+all:
+  children:
+    huawei:
+      hosts:
+        FIORI:
+          ansible_host: 192.168.1.16
+          ansible_user: root
+          ansible_password: Apeotactico2018
+          region: Mexico City1
+          tenant: apeotactico_huawei
+          provider: huawei
+        S4HANADEV:
+          ansible_host: 192.168.0.22
+          ansible_user: root
+          ansible_password: Apeotactico2018
+          region: Mexico City1
+          tenant: apeotactico_huawei
+          provider: huawei
+        S4HANA_PRO:
+          ansible_host: 192.168.2.9
+          ansible_user: root
+          ansible_password: Apeotactico2018
+          region: Mexico City1
+          tenant: apeotactico_huawei
+          provider: huawei
+        saprouter_clon3:
+          ansible_host: 192.168.0.39
+          ansible_user: root
+          ansible_password: A7aiA2024
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        sync_Ayala_prd_clon:
+          ansible_host: 192.168.0.63
+          ansible_user: root
+          ansible_password: A7aiA2024Pr0
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        ERPPRO_Clon3:
+          ansible_host: 192.168.0.184
+          ansible_user: root
+          ansible_password: A7aiA2024Pr0
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        saprouter_clon:
+          ansible_host: 192.168.0.24
+          ansible_user: root
+          ansible_password: A7aiA2024
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        ERPPRO:
+          ansible_host: 172.16.0.71
+          ansible_user: root
+          ansible_password: A7aiA2024Pr0
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        saprouter:
+          ansible_host: 172.16.0.124
+          ansible_user: root
+          ansible_password: A7aiA2024
+          region: Mexico City2
+          tenant: ayala_huawei
+          provider: huawei
+        BRUDI_DRP:
+          ansible_host: 192.168.20.2
+          ansible_user: Administrator
+          ansible_password: wI9HJ9HUemnOwQexYn0A
+          region: Mexico City1
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        CONTPAQ:
+          ansible_host: 172.16.0.95
+          ansible_user: Administrator
+          ansible_password: C0n7P4Q_2024!!+
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        QAS_DEV_CLONProdccion:
+          ansible_host: 172.16.0.140
+          ansible_user: Administrator
+          ansible_password: Q4sBrud1f4rm@2023!!+
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        ECS_SQL:
+          ansible_host: 172.16.0.210
+          ansible_user: Administrator
+          ansible_password: bRuLu3c5-5q1@K1vo2023!!
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        BRU_WIN:
+          ansible_host: 172.16.0.240
+          ansible_user: Administrator
+          ansible_password: Brud1f4rm4h2h*
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        QAS_DEV:
+          ansible_host: 192.168.0.27
+          ansible_user: Administrator
+          ansible_password: Q4sBrud1f4rm@2023!!+
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        SAPPRO:
+          ansible_host: 172.16.0.121
+          ansible_user: Administrator
+          ansible_password: Brud1f4rm@2023!!
+          region: Mexico City2
+          tenant: BRULUART_HUAWEI
+          provider: huawei
+        SRV_MCRP:
+          ansible_host: 172.16.0.19
+          ansible_user: Administrator
+          ansible_password: McRp@V1k0_082024!!
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        SRV_MCRPF:
+          ansible_host: 172.16.0.232
+          ansible_user: Administrator
+          ansible_password: $p0or7m3X2420#!
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        SRV_MCBO:
+          ansible_host: 172.16.0.206
+          ansible_user: Administrator
+          ansible_password: SRVMCBO@V1k0_082023!!+
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        SRV_R_PRO:
+          ansible_host: 172.16.0.129
+          ansible_user: Administrator
+          ansible_password: $p0or7m3X2420#!
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        OPENVPN:
+          ansible_host: 172.16.0.14
+          ansible_user: root
+          ansible_password: key spotmex
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        INTEGRACION:
+          ansible_host: 172.16.0.216
+          ansible_user: Administrator
+          ansible_password: iNt3grAc1oN@V1k0$2023!!
+          region: Mexico City2
+          tenant: contpaqi
+          provider: huawei
+        Desarrollov17:
+          ansible_host: 192.168.0.90
+          ansible_user: root
+          ansible_password: cortina_huawei.ppk
+          region: Mexico City1
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        cortina_odoo_1:
+          ansible_host: 172.16.0.241
+          ansible_user: linux
+          ansible_password: CORTINA.ppk
+          region: Mexico City1
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        cortina:
+          ansible_host: 172.16.0.240
+          ansible_user: linux
+          ansible_password: CORTINA.ppk
+          region: Mexico City1
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        cortina_1:
+          ansible_host: 172.16.0.63
+          ansible_user: linux
+          ansible_password: CORTINA.ppk
+          region: Mexico City1
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        DESARROLLO:
+          ansible_host: 172.16.0.89
+          ansible_user: root
+          ansible_password: Cortina2020
+          region: Mexico City1
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        ECS_BST:
+          ansible_host: 172.16.0.220
+          ansible_user: Administrator
+          ansible_password: V1k@-BbTs2023!!
+          region: Mexico City2
+          tenant: CORTINA_HUAWEI
+          provider: huawei
+        CLON_SAPPRO:
+          ansible_host: 192.168.0.184
+          ansible_user: Administrator
+          ansible_password: Viko@2020
+          region: Mexico City1
+          tenant: cuadritos_huawei
+          provider: huawei
+        cuadritos_huawei_SAPPRO:
+          ansible_host: 172.16.0.16
+          ansible_user: Administrator
+          ansible_password: Viko@2020
+          region: Mexico City1
+          tenant: cuadritos_huawei
+          provider: huawei
+        SAPQAS:
+          ansible_host: 172.16.0.211
+          ansible_user: Administrator
+          ansible_password: Viko@2020
+          region: Mexico City1
+          tenant: cuadritos_huawei
+          provider: huawei
+        SAPDES:
+          ansible_host: 172.16.0.108
+          ansible_user: Administrator
+          ansible_password: Viko@2020
+          region: Mexico City1
+          tenant: cuadritos_huawei
+          provider: huawei
+        facturacion:
+          ansible_host: 192.168.0.159
+          ansible_user: Administrator
+          ansible_password: nPpr3YCgwIacPnQ9gXYn
+          region: Mexico City1
+          tenant: CUERVO_NEW
+          provider: huawei
+        ERP_QAS:
+          ansible_host: 192.168.0.71
+          ansible_user: Administrator
+          ansible_password: JBGrupo2023$*
+          region: Mexico City1
+          tenant: CUERVO_NEW
+          provider: huawei
+        CUERVOERP_DEV:
+          ansible_host: 192.168.0.70
+          ansible_user: Administrator
+          ansible_password: JBGrupo2023$*
+          region: Mexico City1
+          tenant: CUERVO_NEW
+          provider: huawei
+        DACSA:
+          ansible_host: 10.0.1.97
+          ansible_user: root
+          ansible_password: 2YyF1MaTBUSokILaYeth
+          region: Mexico City2
+          tenant: dacsa_huawei
+          provider: huawei
+        CRMMARBERW16:
+          ansible_host: 172.16.0.157
+          ansible_user: Administrator
+          ansible_password: Cw1n@m4rb3r$v1K02023!!
+          region: Mexico City2
+          tenant: dacsa_huawei
+          provider: huawei
+        CLON_ECS_MARBER1:
+          ansible_host: 172.16.0.112
+          ansible_user: root
+          ansible_password: D@csa24!x#00
+          region: Mexico City2
+          tenant: dacsa_huawei
+          provider: huawei
+        DACSA_ERPPRO:
+          ansible_host: 172.16.0.134
+          ansible_user: root
+          ansible_password: 2YyF1MaTBUSokILaYeth
+          region: Mexico City2
+          tenant: dacsa_huawei
+          provider: huawei
+        SAP_ROUTER:
+          ansible_host: 172.16.0.126
+          ansible_user: root
+          ansible_password: iyEdrvXavkAkx8L7aKzE
+          region: Mexico City2
+          tenant: dacsa_huawei
+          provider: huawei
+        enbvmxtsbx00_ENABLE_PROCLON:
+          ansible_host: 192.168.1.192
+          ansible_user: Administrator
+          ansible_password: Hi2NSVw8PBOCZOZE7U6d
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        ECS_ALLD2022:
+          ansible_host: 172.16.0.192
+          ansible_user: Administrator
+          ansible_password: e0JEpvC5@K1v02023!!
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        enablepro:
+          ansible_host: 192.168.1.191
+          ansible_user: Administrator
+          ansible_password: NEmp8XNMNX12VlGfQh6G
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        ENABLE_BPC:
+          ansible_host: 192.168.1.93
+          ansible_user: Administrator
+          ansible_password: R2K6G887OCLDH4DanJAI
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        s4hana:
+          ansible_host: 192.168.1.144
+          ansible_user: root
+          ansible_password: Key Enable
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        enabletst:
+          ansible_host: 192.168.1.48
+          ansible_user: Administrator
+          ansible_password: NEmp8XNMNX12VlGfQh6G
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        TERMINAL_SERVER:
+          ansible_host: 192.168.1.196
+          ansible_user: Administrator
+          ansible_password: .T3rm1n4bl3$05$2024.
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        BW4HANA:
+          ansible_host: 192.168.1.83
+          ansible_user: root
+          ansible_password: Key Enable
+          region: Mexico City1
+          tenant: enable_huawei
+          provider: huawei
+        ECS_WINDOWS:
+          ansible_host: 172.16.0.42
+          ansible_user: Administrator
+          ansible_password: '#A11-v1k@2021!'
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        webpro:
+          ansible_host: 172.16.0.206
+          ansible_user: root
+          ansible_password: Viko2020
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        webdes:
+          ansible_host: 172.16.0.58
+          ansible_user: root
+          ansible_password: Viko2020
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        enable006:
+          ansible_host: 10.91.22.77
+          ansible_user: root
+          ansible_password: 2LzBbsDu
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        enable001:
+          ansible_host: 10.91.22.84
+          ansible_user: Administrator
+          ansible_password: En@ble2o16#
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        enable004_enable_mx:
+          ansible_host: 10.91.22.71
+          ansible_user: Administrator
+          ansible_password: BPCDelta2018
+          region: Mexico City2
+          tenant: enable_huawei
+          provider: huawei
+        PASTEKO:
+          ansible_host: 172.16.0.66
+          ansible_user: Administrator
+          ansible_password: jG0xekJdPyTd7gs8GPkp
+          region: Mexico City1
+          tenant: FARMAAMIGO
+          provider: huawei
+        APLICATIVO_QAS:
+          ansible_host: 172.16.0.68
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        hana3:
+          ansible_host: 172.16.0.221
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        HANA2:
+          ansible_host: 172.16.0.163
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        HANA1:
+          ansible_host: 172.16.0.162
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        HANA_DIALOGO:
+          ansible_host: 172.16.0.13
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        SAPROUTER:
+          ansible_host: 172.16.0.12
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        BW_PRODUCCION:
+          ansible_host: 172.16.0.11
+          ansible_user: cloud-user
+          ansible_password: Key Farmaamigo
+          region: Mexico City2
+          tenant: FARMAAMIGO
+          provider: huawei
+        SAP_WINDOWS_1:
+          ansible_host: 172.16.0.147
+          ansible_user: Administrator
+          ansible_password: F@rm4p13l_2022!
+          region: Mexico City1
+          tenant: FARMAPIEL_Huawei
+          provider: huawei
+        ECS_FARMA:
+          ansible_host: 172.16.0.181
+          ansible_user: Administrator
+          ansible_password: F4rm4@E5c_2023!!
+          region: Mexico City1
+          tenant: FARMAPIEL_Huawei
+          provider: huawei
+        aspel_coi:
+          ansible_host: 172.16.0.159
+          ansible_user: Administrator
+          ansible_password: F4rm4p13l@sp3l_2022!
+          region: Mexico City1
+          tenant: FARMAPIEL_Huawei
+          provider: huawei
+        SAPHANA:
+          ansible_host: 172.16.0.11
+          ansible_user: root
+          ansible_password: F@rm4p13l_2022!
+          region: Mexico City1
+          tenant: FARMAPIEL_Huawei
+          provider: huawei
+        HANDHELDPN:
+          ansible_host: 172.16.0.23
+          ansible_user: Administrator
+          ansible_password: Hpr0t3I@K1vo2023!!
+          region: Mexico City2
+          tenant: Grupo_Edid
+          provider: huawei
+        hananefintecnuevo:
+          ansible_host: 172.16.0.19
+          ansible_user: root
+          ansible_password: Cn3f1nt3@V1K02023!
+          region: Mexico City2
+          tenant: Grupo_Edid
+          provider: huawei
+        cnefintec:
+          ansible_host: 172.16.0.221
+          ansible_user: UPGRADE\ADMINISTRATOR
+          ansible_password: Cn3f!08nt3c@V1K02o23!!
+          region: Mexico City2
+          tenant: Grupo_Edid
+          provider: huawei
+        VERTICAL:
+          ansible_host: 172.16.0.209
+          ansible_user: Administrator
+          ansible_password: N3f1n-v1k@2022!
+          region: Mexico City2
+          tenant: Grupo_Edid
+          provider: huawei
+        IF_SERVER:
+          ansible_host: 172.16.0.75
+          ansible_user: Administrator
+          ansible_password: 1fs3rVEr!!@V1k022!!!
+          region: Mexico City2
+          tenant: Grupo_Edid
+          provider: huawei
+        DEV_QAS_NEW_USAMEX:
+          ansible_host: 172.168.0.151
+          ansible_user: root
+          ansible_password: Invex2020
+          region: Mexico City3
+          tenant: Grupo_Edid
+          provider: huawei
+        PRO_USAMEX:
+          ansible_host: 172.168.0.121
+          ansible_user: root
+          ansible_password: Invex2020
+          region: Mexico City4
+          tenant: Grupo_Edid
+          provider: huawei
+        SVRCOMPAQi:
+          ansible_host: 192.168.0.138
+          ansible_user: Administrator
+          ansible_password: GRup0R0m5Vrc0m9aq1@2024!
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GR_SAPQAS:
+          ansible_host: 192.168.0.34
+          ansible_user: Administrator
+          ansible_password: AdM1N1sTr4t0r@2024!GRS4PQ4s
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GRERPRO:
+          ansible_host: 192.168.0.164
+          ansible_user: Administrator
+          ansible_password: AdM1N1sTr4t0r@2024!GRPPR0
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GR_SAPDES:
+          ansible_host: 192.168.0.113
+          ansible_user: Administrator
+          ansible_password: AdM1N1sTr4t0r@2024!GRD3s
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GR_SAPROUTER:
+          ansible_host: 192.168.0.230
+          ansible_user: root
+          ansible_password: Gr0m054pr0u@V1k02022!
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        Romobiomet:
+          ansible_host: 192.168.0.14
+          ansible_user: Administrator
+          ansible_password: Gr0m0Pr1N3rGy@2024!!
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GR_SVR_SQL:
+          ansible_host: 192.168.0.12
+          ansible_user: Administrator
+          ansible_password: AdM1N1sTr4t0r@2024!GRSVR
+          region: Mexico City1
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GRBBDD:
+          ansible_host: 172.16.0.9
+          ansible_user: Administrator
+          ansible_password: GRup0R0m0AdM1N1sTr4t0r@2024!
+          region: Mexico City2
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        GRAPP:
+          ansible_host: 172.16.0.194
+          ansible_user: Administrator
+          ansible_password: $Gr0p02024v1k0$1
+          region: Mexico City2
+          tenant: GRUPO_ROMO-HUAWEI
+          provider: huawei
+        clon:
+          ansible_host: 172.16.0.36
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        CLON_AWS:
+          ansible_host: 10.0.18.107
+          ansible_user: Administrator
+          ansible_password: "\xF1visi4$ea&"
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        Utility_win:
+          ansible_host: 10.0.18.122
+          ansible_user: Administrator
+          ansible_password: Util@k1v02023!!
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        WEBDISP_uitlity:
+          ansible_host: 10.0.18.33
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        utilitypro:
+          ansible_host: 10.0.18.32
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        Utility:
+          ansible_host: 10.0.18.31
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        K2PARTNERING:
+          ansible_host: 172.16.2.162
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        Saprouter:
+          ansible_host: 172.16.2.47
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        atcamiones1:
+          ansible_host: 172.16.0.177
+          ansible_user: Administrator
+          ansible_password: 4tCAm10Ny4u70bu$3$_V1k0@23!!
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        s4hanadev_CLUBERS:
+          ansible_host: 172.16.2.191
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        WDispDeV:
+          ansible_host: 172.16.2.167
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        S4HANAPRO_CLUBERS:
+          ansible_host: 172.16.2.193
+          ansible_user: root
+          region: Mexico City2
+          tenant: KENWORTH
+          provider: huawei
+        ATCAMIONES_S4HANADEV:
+          ansible_host: 172.16.0.30
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        saperppro_VOLVO:
+          ansible_host: 192.168.0.51
+          ansible_user: Administrator
+          ansible_password: rL5KDWpkxch7wivkwiXL
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        QAS_VOLVO:
+          ansible_host: 192.168.0.5
+          ansible_user: Administrator
+          ansible_password: oMLKioQvpbr9ZuGIyNU4
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        APP_PRO_CLUBERS:
+          ansible_host: 172.16.2.123
+          ansible_user: Administrator
+          ansible_password: Appd3s2021!
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        SECRETARIA_FINANZAS:
+          ansible_host: 172.16.10.25
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        KENWORTH_S4HANA_PRO:
+          ansible_host: 172.16.22.127
+          ansible_user: cloud-user
+          ansible_password: Kenworth_nueva
+          region: Mexico City1
+          tenant: KENWORTH
+          provider: huawei
+        NUEVO_KRESTON:
+          ansible_host: 172.16.0.13
+          ansible_user: Administrator
+          ansible_password: nJ9wDbdvWi5E8Lg3GbBk?=
+          region: Mexico City1
+          tenant: KRESTON_huawei
+          provider: huawei
+        KRESTON:
+          ansible_host: 172.16.0.55
+          ansible_user: Administrator
+          ansible_password: nuevokreston1!
+          region: Mexico City1
+          tenant: KRESTON_huawei
+          provider: huawei
+        KRESTON2023:
+          ansible_host: 192.168.0.249
+          ansible_user: Administrator
+          ansible_password: KW32g8BEmXlTq8E5UCfs
+          region: Mexico City1
+          tenant: KRESTON_huawei
+          provider: huawei
+        macma_huawei_SAPROUTER:
+          ansible_host: 10.0.0.183
+          ansible_user: Administrator
+          ansible_password: 5aPrT0@V1k02024!
+          region: Mexico City2
+          tenant: macma_huawei
+          provider: huawei
+        SAP_BWPRO_DRP:
+          ansible_host: 10.0.0.181
+          ansible_user: Administrator
+          ansible_password: Drp$BwPr0@Vik02024!
+          region: Mexico City2
+          tenant: macma_huawei
+          provider: huawei
+        SAP_ERPPRO_DRP:
+          ansible_host: 10.0.0.10
+          ansible_user: Administrator
+          ansible_password: Drp$3rPr0@Vik02024!
+          region: Mexico City2
+          tenant: macma_huawei
+          provider: huawei
+        Linux_Marnov:
+          ansible_host: 172.16.0.238
+          ansible_user: root
+          ansible_password: M@3C0v2o22!$
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        sync_Ayala:
+          ansible_host: 172.16.0.157
+          ansible_user: root
+          ansible_password: Ay4l4-m4rbR@2023!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        ECS_MARBER:
+          ansible_host: 172.16.0.94
+          ansible_user: root
+          ansible_password: M4rb3r@2021!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        marber_new_SAPROUTER:
+          ansible_host: 172.16.0.149
+          ansible_user: root
+          ansible_password: 54pR0-m8r@2024!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        ERPRO:
+          ansible_host: 172.16.0.23
+          ansible_user: root
+          ansible_password: 3RpR0-m8r@2024!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        B4WHANA:
+          ansible_host: 10.16.0.101
+          ansible_user: root
+          ansible_password: K1v0@Bwh4n42023!!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        CRMMARBER:
+          ansible_host: 172.16.0.137
+          ansible_user: Administrator
+          ansible_password: V1k0Crm4rb3r2023!!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        WIN_MARBER:
+          ansible_host: 172.16.0.227
+          ansible_user: Administrator
+          ansible_password: V1k0@M4r2022!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        WINDOWS_MARBER:
+          ansible_host: 172.16.0.74
+          ansible_user: Administrator
+          ansible_password: K1v0$M4rb3r2o23!
+          region: Mexico City2
+          tenant: marber_new
+          provider: huawei
+        clonmarnov:
+          ansible_host: 192.168.0.241
+          ansible_user: root
+          ansible_password: Viko2024
+          region: Mexico City2
+          tenant: marnov_huawei
+          provider: huawei
+        marnov_huawei_SAPROUTER:
+          ansible_host: 172.16.0.26
+          ansible_user: root
+          ansible_password: hSU}#F!A~@pmElvwYW]A
+          region: Mexico City2
+          tenant: marnov_huawei
+          provider: huawei
+        marnov_huawei_ERPPRO:
+          ansible_host: 172.16.0.74
+          ansible_user: root
+          ansible_password: '%W_zLBWRIQo1pW0y,m!f'
+          region: Mexico City2
+          tenant: marnov_huawei
+          provider: huawei
+        DRPMAVER:
+          ansible_host: 10.0.0.56
+          ansible_user: Administrator
+          ansible_password: M4rb3r@2021!
+          region: Mexico City2
+          tenant: MAVER
+          provider: huawei
+        modatelas:
+          ansible_host: 10.16.49.242
+          ansible_user: Administrator
+          ansible_password: M0d4t3l@v1k02022!
+          region: Mexico City1
+          tenant: MODATELAS
+          provider: huawei
+        CALIDAD:
+          ansible_host: 10.16.49.139
+          ansible_user: Administrator
+          ansible_password: E3HgY4oXxL9dMaZwQAJA
+          region: Mexico City1
+          tenant: MODATELAS
+          provider: huawei
+        presupuestos_1:
+          ansible_host: 10.16.49.132
+          ansible_user: Administrator
+          ansible_password: oWDEAkZ5Wif7M31GautV
+          region: Mexico City1
+          tenant: MODATELAS
+          provider: huawei
+        CLON_CALIDAD:
+          ansible_host: 10.16.50.152
+          ansible_user: Administrator
+          ansible_password: Drp$BwPr0@Vik02024!
+          region: Mexico City1
+          tenant: modatelas_huawei
+          provider: huawei
+        Prizma:
+          ansible_host: 172.16.1.225
+          ansible_user: Administrator
+          ansible_password: Pr12M4S4rV3rV1k02023!!
+          region: Mexico City1
+          tenant: MOYEL
+          provider: huawei
+        b1_hana:
+          ansible_host: 172.16.1.198
+          ansible_user: root
+          ansible_password: '!K1u0V1k0w0Ye12o2E!'
+          region: Mexico City1
+          tenant: MOYEL
+          provider: huawei
+        APLICATIVO_B1:
+          ansible_host: 172.16.1.197
+          ansible_user: Administrator
+          ansible_password: VFtZSI8LWgSOW53OJEpv
+          region: Mexico City1
+          tenant: MOYEL
+          provider: huawei
+        SINERGMAN_SAPROUTER:
+          ansible_host: 172.16.0.13
+          ansible_user: root
+          ansible_password: Sinergman2020
+          region: Mexico City1
+          tenant: SINERGMAN
+          provider: huawei
+        SINERGMAN_S4HANA_PRO:
+          ansible_host: 172.16.0.12
+          ansible_user: root
+          ansible_password: Sinergman2020
+          region: Mexico City1
+          tenant: SINERGMAN
+          provider: huawei
+        S4HANA_DEV_QAS:
+          ansible_host: 172.16.0.11
+          ansible_user: root
+          ansible_password: Sinergman2020
+          region: Mexico City1
+          tenant: SINERGMAN
+          provider: huawei
+        erptest:
+          ansible_host: 172.16.0.124
+          region: Mexico City1
+          tenant: SUPERDONA
+          provider: huawei
+        TAG_DEV:
+          ansible_host: 192.168.0.144
+          ansible_user: Administrator
+          ansible_password: oQ8YjNLQUo89LmZ
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        TAG_PRO:
+          ansible_host: 192.168.0.143
+          ansible_user: Administrator
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        Pruebas_Seguridad:
+          ansible_host: 192.168.0.68
+          ansible_user: root
+          ansible_password: PrU3b4sS3gur1d4d
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        Present1RDP:
+          ansible_host: 172.16.0.63
+          ansible_user: Administrator
+          ansible_password: JGKgm078LMotdhGBKwE!2
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        Modatelas:
+          ansible_host: 192.168.0.160
+          ansible_user: Administrator
+          ansible_password: Viko2018.
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        TrendMicroPruebas:
+          ansible_host: 192.168.0.58
+          ansible_user: Administrator
+          ansible_password: V1k@k2O%OOUu2024!$$
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        fer_sap:
+          ansible_host: 192.168.0.202
+          ansible_user: Administrator
+          ansible_password: hyvpTcruMoxTVJR0X88K
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        hana_cockpit:
+          ansible_host: 192.168.0.246
+          ansible_user: root
+          ansible_password: Viko2020
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        ACISAP:
+          ansible_host: 192.168.0.249
+          ansible_user: root
+          ansible_password: Key_llavesputy
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        corpomare:
+          ansible_host: 192.168.2.104
+          ansible_user: Administrator
+          ansible_password: Viko2021
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        youlandapp:
+          ansible_host: 172.16.0.123
+          ansible_user: root
+          ansible_password: Viko2020!
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        youlandbd_1:
+          ansible_host: 172.16.0.128
+          ansible_user: root
+          ansible_password: V1ko@y0u_2@21!
+          region: Mexico City1
+          tenant: VIKO_NEW
+          provider: huawei
+        Present1_New:
+          ansible_host: 172.16.0.138
+          ansible_user: sapb1\administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        presentador2:
+          ansible_host: 172.16.0.146
+          ansible_user: sapb1\administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        presentador4:
+          ansible_host: 172.16.0.189
+          ansible_user: sapb1\administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        PRESENTADOR3:
+          ansible_host: 172.16.0.194
+          ansible_user: Administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!1
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        VIKO_NEW_Present1RDP:
+          ansible_host: 172.16.0.107
+          ansible_user: Administrator
+          ansible_password: JGKgmLMotdhGBKwE!2023
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        PARE:
+          ansible_host: 192.168.0.99
+          ansible_user: Administrator
+          ansible_password: P4R3@V1K0!2020
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        migracionwindows:
+          ansible_host: 172.16.0.213
+          ansible_user: Administrator
+          ansible_password: M1gr4c10n-v1k0_08@2023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        b1_hanapro:
+          ansible_host: 172.16.0.141
+          ansible_user: root
+          ansible_password: b1-9r0@2023#!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        vikoweb:
+          ansible_host: 192.168.2.233
+          ansible_user: linux
+          ansible_password: Key_llavesputy
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        desarrollovikoone:
+          ansible_host: 192.168.0.20
+          ansible_user: Administrator
+          ansible_password: D3S4RR0@V1K0!2020
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        migracionsuse:
+          ansible_host: 172.16.0.80
+          ansible_user: root
+          ansible_password: M1gr4c10n-v1k0@2023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        BALANCEADOR:
+          ansible_host: 172.16.0.110
+          ansible_user: Administrator
+          ansible_password: k1V0@b4L4Nc34d0r$2023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        fundacionSAP10:
+          ansible_host: 172.16.1.114
+          ansible_user: Administrator
+          ansible_password: f#Nd@c!0n$Ap
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        servicebascula_new:
+          ansible_host: 172.16.0.144
+          ansible_user: sapb1\administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        SAPCLOUD:
+          ansible_host: 172.16.0.4
+          ansible_user: Administrator
+          ansible_password: Cl0ud-S4p-K1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        ECS_C3:
+          ansible_host: 172.16.0.87
+          ansible_user: Administrator
+          ansible_password: K1v0@3c52023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        FACTADD_AIRQUALITY:
+          ansible_host: 172.16.0.191
+          ansible_user: Administrator
+          ansible_password: '#F4Ct4dd@4IRqUal1Ty'
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        CITRIX_NEW_FRESHKAMPO:
+          ansible_host: 10.130.34.94
+          ansible_user: Administrator
+          ansible_password: Fr3s4$09872024!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        pruebasSAP10:
+          ansible_host: 172.16.0.31
+          ansible_user: Administrator
+          ansible_password: '@V1k0_082024!!'
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        SUSEAPP:
+          ansible_host: 172.16.0.74
+          ansible_user: root
+          ansible_password: Sus34pPv1k02023
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        AIRQUALITY_Windows:
+          ansible_host: 172.16.0.24
+          ansible_user: Administrator
+          ansible_password: 4dm41rqu4l1tY2024#
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        AIRQUALITY_Suse:
+          ansible_host: 172.16.0.236
+          ansible_user: root
+          ansible_password: 4irqu4litY2024#v1k0
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        FAMOUSWIN2019_FRESHKAMPO:
+          ansible_host: 10.130.35.124
+          ansible_user: Administrator
+          ansible_password: F4m0u5@k1v02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        ECS_HOmega:
+          ansible_host: 172.16.0.87
+          ansible_user: Administrator
+          ansible_password: 0m3g45erv3rVik02023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        MGR2402SUSE:
+          ansible_host: 172.16.0.83
+          ansible_user: root
+          ansible_password: S4p-m1gr4@2023!!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        MGR2402WIN:
+          ansible_host: 172.16.0.129
+          ansible_user: Administrator
+          ansible_password: S4p-m1gr4@2023!!#
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        SQLVIKO:
+          ansible_host: 172.16.0.186
+          ansible_user: Administrator
+          ansible_password: V1k0@2023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        SMARTAGRO_FRESHKAMPO:
+          ansible_host: 10.130.34.24
+          ansible_user: Administrator
+          ansible_password: Fk4mp0@v1k02022!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        openvpn_FRESHKAMPO:
+          ansible_host: 10.130.34.213
+          ansible_user: root
+          ansible_password: key viko_new
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        APPFUNDACION:
+          ansible_host: 172.16.0.221
+          ansible_user: Administrator
+          ansible_password: Viko2022!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        CCCHANA:
+          ansible_host: 172.16.0.20
+          ansible_user: root
+          ansible_password: V1k0@2022!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        RDP1VIKO:
+          ansible_host: 172.16.0.71
+          ansible_user: Administrator
+          ansible_password: V1k0@2023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        CCCVIKO:
+          ansible_host: 172.16.0.35
+          ansible_user: Administrator
+          ansible_password: V1k0@_08$2024!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        AD_FRESHKAMPO:
+          ansible_host: 10.130.34.85
+          ansible_user: Administrator
+          ansible_password: Fresa0987&
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        NAS_FRESHKAMPO:
+          ansible_host: 10.130.34.71
+          ansible_user: Administrator
+          ansible_password: Fk4mp0@v1k02022!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        JOSEFINA:
+          ansible_host: 10.0.10.169
+          ansible_user: cloud-user
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        FRIDA_FRESHKAMPO:
+          ansible_host: 10.130.34.79
+          ansible_user: huawei.frida
+          ansible_password: huawei.frida22@@
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        SAPSQL_FRESHKAMPO:
+          ansible_host: 10.130.34.83
+          ansible_user: Administrator
+          ansible_password: Fk4mp0@v1k02023!
+          region: Mexico City2
+          tenant: VIKO_NEW
+          provider: huawei
+        DYMFacturacion:
+          ansible_host: 192.168.236.10
+          ansible_user: Administrator
+          region: Mexico City2
+          tenant: dyn_huawei
+          provider: huawei
+        QAS_DYN:
+          ansible_host: 172.16.0.172
+          ansible_user: cloud-user
+          ansible_password: llave dyn.ppk
+          region: Mexico City2
+          tenant: dyn_huawei
+          provider: huawei
+        pro_dyn:
+          ansible_host: 172.16.0.173
+          ansible_user: cloud-user
+          ansible_password: llave dyn.ppk
+          region: Mexico City2
+          tenant: dyn_huawei
+          provider: huawei
+        dyn_huawei_saprouter:
+          ansible_host: 172.16.0.174
+          ansible_user: cloud-user
+          ansible_password: llave dyn.ppk
+          region: Mexico City2
+          tenant: dyn_huawei
+          provider: huawei
+        dev:
+          ansible_host: 172.16.0.123
+          ansible_user: cloud-user
+          ansible_password: llave dyn.ppk
+          region: Mexico City2
+          tenant: dyn_huawei
+          provider: huawei
+        Olmeca:
+          ansible_host: 192.168.0.127
+          ansible_user: root
+          ansible_password: OlW3cA2024
+          region: Mexico City1
+          tenant: Olmeca
+          provider: huawei
+    aws:
+      hosts:
+        ServidorBD:
+          ansible_host: 10.0.0.26
+          ansible_user: Administrator
+          ansible_password: Sxr)g45V9ox
+          region: us-east-1
+          tenant: DOMINIO
+          provider: aws
+        Servidor_Web:
+          ansible_host: 10.0.0.23
+          ansible_user: Administrator
+          ansible_password: -Pr$b%J-DQz
+          region: us-east-1
+          tenant: ''
+          provider: aws
+        Viko_Prod_1:
+          ansible_host: 10.0.0.27
+          ansible_user: Administrator
+          ansible_password: uu-t!L6SkS!.9$D3(jebjO6kAX5VVRvr
+          region: us-east-1
+          tenant: ''
+          provider: aws
+        Casa_Dragones_NEW:
+          ansible_host: 10.0.0.169
+          ansible_user: Administrator
+          ansible_password: '*Hc5PWT!KD'
+          region: us-west-2b
+          tenant: Casa_Dragones
+          provider: aws
+        PO_DEV:
+          ansible_host: 172.31.15.11
+          ansible_user: Administrator
+          ansible_password: iv9!D@Hao6Q4y$S*7YNkHg$;DLgV=FE!
+          region: us-east-1d
+          tenant: Jose Cuervo
+          provider: aws
+        PO_QAS:
+          ansible_host: 172.31.15.12
+          ansible_user: Administrator
+          ansible_password: 6xiXaA!$-3dIvFkA2qLjH8nsVB9CmYyh
+          region: us-east-1d
+          tenant: ''
+          provider: aws
+        PO_PRO:
+          ansible_host: 172.31.15.13
+          ansible_user: Administrator
+          ansible_password: C=TIL)7!c;ZmLmUWqHh&L(&IJqOyyC9j
+          region: us-east-1d
+          tenant: ''
+          provider: aws
+        saprouter_PO:
+          ansible_host: 172.31.15.14
+          ansible_user: ec2-user
+          ansible_password: Cu3rv0$2022!
+          region: us-east-1d
+          tenant: ''
+          provider: aws
+        OPEN_VPN1:
+          ansible_host: 172.31.7.143
+          ansible_user: openvpnas
+          region: us-east-1d
+          tenant: ''
+          provider: aws
+        OPEN_VPN_2:
+          ansible_host: 172.31.1.133
+          ansible_user: openvpnas
+          region: us-east-1d
+          tenant: ''
+          provider: aws
+        Sanchez_SAPROUTER:
+          ansible_host: 172.31.12.202
+          ansible_user: ec2-user
+          ansible_password: S4nCh3z17.
+          region: us-east-1a
+          tenant: Sanchez
+          provider: aws
+        NetWeaver_QAS:
+          ansible_host: 172.31.0.73
+          ansible_user: ec2-user
+          ansible_password: S4nCh3z17.
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        Hana_QAS:
+          ansible_host: 172.31.0.21
+          ansible_user: ec2-user
+          ansible_password: S4nCh3z17.
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        Hana_PRO:
+          ansible_host: 172.31.15.236
+          ansible_user: ec2-user
+          ansible_password: S4nCh3z17.
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        NetWeaver_PRO:
+          ansible_host: 172.31.14.60
+          ansible_user: ec2-user
+          ansible_password: S4nCh3z17.
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        Producciontomcat_env:
+          ansible_host: 172.31.13.143
+          ansible_user: ec2-user
+          ansible_password: '-'
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        clondesarrollo:
+          ansible_host: 172.31.6.210
+          ansible_user: ec2-user
+          ansible_password: '-'
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        Tomcatdesarrollo_env:
+          ansible_host: 172.31.1.2
+          ansible_user: ec2-user
+          ansible_password: '-'
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        Devtomcat_env:
+          ansible_host: 172.31.1.11
+          ansible_user: ec2-user
+          ansible_password: '-'
+          region: us--west-2b
+          tenant: ''
+          provider: aws
+        portal_des:
+          ansible_host: 172.31.47.250
+          ansible_user: centos
+          region: us-east-1a
+          tenant: NATASA
+          provider: aws
+        sap_cloud_agent1:
+          ansible_host: 172.31.39.115
+          ansible_user: Administrator
+          ansible_password: S4pCl0ud@N4t4s42022!
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        host_SAPROUTER:
+          ansible_host: 172.31.43.178
+          ansible_user: ec2-user
+          ansible_password: Natasa2020!
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        ADES_SERVER:
+          ansible_host: 172.31.40.115
+          ansible_user: ec2-user
+          ansible_password: Natasa2020!
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        PORTALPRO:
+          ansible_host: 172.31.45.13
+          ansible_user: centos
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        s4hana_DES:
+          ansible_host: 172.31.34.116
+          ansible_user: ec2-user
+          ansible_password: Natasa2020!
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        s4hanapro:
+          ansible_host: 172.31.40.27
+          ansible_user: ec2-user
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        ADS_DES:
+          ansible_host: 172.31.46.31
+          ansible_user: Administrator
+          ansible_password: -7O*c?%x*Tj7&)CHRHljYjoRb?4@T(d&
+          region: us-east-1a
+          tenant: ''
+          provider: aws
+        SOLMAN_nuevo:
+          ansible_host: 172.31.56.66
+          ansible_user: Administrator
+          ansible_password: wJC.nmPY4f
+          region: us-east-1b
+          tenant: Agroindustrias
+          provider: aws
+        DEV_1610:
+          ansible_host: 172.31.52.213
+          ansible_user: root
+          ansible_password: Agro2019
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        DEV_S42021:
+          ansible_host: 172.31.52.212
+          ansible_user: ec2-user
+          ansible_password: Agro2019
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        QAS_S42021:
+          ansible_host: 172.31.56.189
+          ansible_user: ec2-user
+          ansible_password: Agro2019
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        PRO_NEW_INFRA:
+          ansible_host: 172.31.61.109
+          ansible_user: ec2-user
+          ansible_password: Agro2019
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        webdispagro:
+          ansible_host: 172.31.59.74
+          ansible_user: ec2-user
+          ansible_password: Agro2019
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        webdispro:
+          ansible_host: 172.31.60.106
+          ansible_user: ec2-user
+          region: us-east-1b
+          tenant: ''
+          provider: aws
+        pruebagdg:
+          ansible_host: 172.31.19.113
+          region: eu-south-2
+          tenant: GDG
+          provider: aws
+        GDG2:
+          ansible_host: 172.31.19.47
+          ansible_user: root
+          ansible_password: gdgcrypt
+          tenant: ''
+          provider: aws
+    ibm:
+      hosts:
+        PROEMERSONDESWS:
+          ansible_host: 192.168.33.11
+          ansible_user: Adminsitrator
+          ansible_password: AdM1N1sTr4t0r3w3rZoNq45
+          tenant: ITZOIL
+          provider: ibm
+        PROEMERSONWS:
+          ansible_host: 192.168.33.12
+          ansible_user: Adminsitrator
+          ansible_password: Adminsitrator
+          region: vmware
+          tenant: ''
+          provider: ibm
+        EMERSON_WEBSERPRO:
+          ansible_host: 192.168.33.10
+          ansible_user: Administrator
+          ansible_password: MoGSiJl2o23g
+          region: vmware
+          tenant: ''
+          provider: ibm
+        EMERSON_WEBSERQAS:
+          ansible_host: 192.168.33.5
+          ansible_user: Administrator
+          ansible_password: BSKdE2o2EzOn
+          region: vmware
+          tenant: ''
+          provider: ibm
+        PROemersonappl:
+          ansible_host: 192.168.33.9
+          ansible_user: administrator
+          ansible_password: ku4vlwr46yrh/$6hjx3
+          region: vmware
+          tenant: ''
+          provider: ibm
+        PROemersondb:
+          ansible_host: 192.168.33.8
+          ansible_user: administrator
+          ansible_password: ckg5469hblxsd$v7
+          region: vmware
+          tenant: ''
+          provider: ibm
+        emersonapp:
+          ansible_host: 192.168.33.7
+          ansible_user: Administrator
+          ansible_password: e9T1OQYORW0PDvUGX02q
+          region: vmware
+          tenant: ''
+          provider: ibm
+        emersondesbd1:
+          ansible_host: 192.168.33.6
+          ansible_user: Administrator
+          ansible_password: WCuBS3bT
+          region: vmware
+          tenant: ''
+          provider: ibm
+        CREATIVE:
+          ansible_host: 192.168.100.3
+          region: vmware
+          tenant: GRUPO ROMO
+          provider: ibm
+        ROMO_INSITE:
+          ansible_host: 192.168.100.2
+          region: vmware
+          tenant: ''
+          provider: ibm
+        ROMO_PRINERGY_1:
+          ansible_host: 192.168.100.6
+          region: vmware
+          tenant: ''
+          provider: ibm
+        megadev1_ENABLE_VIKO_cloud:
+          ansible_host: 10.221.101.240
+          ansible_user: Administrator
+          ansible_password: 20Me18G4DES
+          region: Dallas 10
+          tenant: 356904 - ENABLE-VIKO
+          provider: ibm
+        MegaPRO01_ENABLE_VIKO_cloud:
+          ansible_host: 10.221.101.244
+          ansible_user: Administrator
+          ansible_password: Ff3E4smz
+          region: Dallas 10
+          tenant: ''
+          provider: ibm
+        megaqas01_ENABLE_VIKO_cloud:
+          ansible_host: 10.221.101.220
+          ansible_user: Administrator
+          ansible_password: 20Me18G4QAS
+          region: Dallas 10
+          tenant: ''
+          provider: ibm
+        ansible1:
+          ansible_host: 10.240.128.6
+          ansible_user: cloud-user
+          ansible_password: '-'
+          region: Dallas 3
+          tenant: 2075298 - VIKOSOL SOLUCIONES IN
+          provider: ibm
+        oracle:
+          ansible_host: 10.240.128.5
+          ansible_user: cloud-user
+          ansible_password: '-'
+          region: Dallas 3
+          tenant: ''
+          provider: ibm
+        degasa:
+          ansible_host: 10.240.128.10
+          ansible_user: Administrator
+          ansible_password: ZprtAdI21u8ON7VGteUf
+          region: Dallas 3
+          tenant: ''
+          provider: ibm
+        documentacion:
+          ansible_host: 10.240.128.5
+          ansible_user: masterweb
+          ansible_password: 876nCUr0G6H5C7plda8S
+          region: Dallas 3
+          tenant: ''
+          provider: ibm
