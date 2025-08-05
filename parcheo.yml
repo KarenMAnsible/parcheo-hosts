@@ -12,6 +12,6 @@
         reboot: yes
       register: actualizaciones
 
-          - name: Listado de actualizaciones instaladas
+    - name: Mostrar actualizaciones aplicadas
       debug:
-        var: actualizaciones.updates
+        var: actualizaciones.installed_update_count
