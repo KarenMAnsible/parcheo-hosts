@@ -1,9 +1,7 @@
 ---
-# This playbook uses the win_ping module to test connectivity to Windows hosts
-- name: Ping 
+- name: Ping
   hosts: trendmicropruebas
-
+  gather_facts: no
   tasks:
-  - name: ping
-    win_ping:
-
+    - name: ping
+      win_ping:
