@@ -1,0 +1,29 @@
+- name: Validación y mantenimiento en servidor Windows
+  hosts: trendmicropruebas
+  gather_facts: yes
+
+  tasks:
+    - name: Mostrar información del sistema
+      debug:
+        var: ansible_facts
+
+    - name: Ejecutar liberador de espacio en disco (Cleanmgr)
+      win_command: cleanmgr /sagerun:1
+      register: cleanmgr_result
+      ignore_errors: true
+
+    - name: Mostrar resultado de cleanmgr
+      debug:
+        var: cleanmgr_result.stdout_lines
+
+    - name: Ejecutar script de PowerShell personalizado
+      win_shell: |
+        Write-Host "→ Iniciando validación del sistema..."
+        Get-ComputerInfo | Select-Object OSName, OSVersion, CsTotalPhysicalMemory
+        Get-Process | Sort-Object CPU -Descending | Select-Object -First 5
+        Get-EventLog -LogName System -Newest 5
+      register: powershell_output
+
+    - name: Mostrar resultado del script de PowerShell
+      debug:
+        var: powershell_output.stdout_lines
