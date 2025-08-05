@@ -21,8 +21,14 @@ all:
     AIRQUALITY__WINDOWS:
       ansible_host: 101.44.27.115
       ansible_user: root
-    ALLDORA_ECS2022:
-      ansible_host: 122.8.189.158
+    ALLDORA_achdev:
+      ansible_host: 35.208.244.118
+      ansible_user: root
+    ALLDORA_achpro:
+      ansible_host: 35.208.158.56
+      ansible_user: root
+    ALLDORA_degasa1:
+      ansible_host: 34.135.255.183
       ansible_user: root
     APEOTACTICO_FIORI:
       ansible_host: 119.8.2.39
@@ -134,6 +140,9 @@ all:
       ansible_user: root
     DACSA-SAPROUTER:
       ansible_host: 101.44.185.251
+      ansible_user: root
+    DACSA-Sybase-Pro:
+      ansible_host: 110.238.84.29
       ansible_user: root
     DACSA_CRM:
       ansible_host: 101.44.184.40
@@ -255,6 +264,9 @@ all:
     FARMAPIEL_SAPWINN:
       ansible_host: 94.74.72.106
       ansible_user: root
+    FARMAPIEL_WINDOWS:
+      ansible_host: 119.8.3.104
+      ansible_user: root
     FKFRIDA:
       ansible_host: 122.8.185.212
       ansible_user: root
@@ -267,7 +279,7 @@ all:
     FRESHKAMPO_FAMOUS2019:
       ansible_host: 122.8.181.2
       ansible_user: root
-    FRESHKAMPO_FK2:
+    FRESHKAMPO_NAS:
       ansible_host: 110.238.83.163
       ansible_user: root
     FRESHKAMPO_OPENVPN:
@@ -521,9 +533,6 @@ all:
       ansible_user: root
     Present1RDP_NEW:
       ansible_host: 101.44.25.70
-      ansible_user: root
-    Present2:
-      ansible_host: 94.74.74.28
       ansible_user: root
     ProteinasNorte_HANDHELDPN:
       ansible_host: 101.44.186.159
