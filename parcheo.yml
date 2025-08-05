@@ -2,6 +2,7 @@
 - name: Parchear servidor Windows
   hosts: trendmicropruebas
   gather_facts: no
+
   tasks:
     - name: Instalar todas las actualizaciones disponibles
       win_updates:
@@ -9,3 +10,8 @@
           - SecurityUpdates
           - CriticalUpdates
         reboot: yes
+      register: actualizaciones
+
+          - name: Listado de actualizaciones instaladas
+      debug:
+        var: actualizaciones.updates
