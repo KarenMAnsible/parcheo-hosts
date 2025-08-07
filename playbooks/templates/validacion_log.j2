@@ -1,0 +1,38 @@
+**************************************
+*         VALIDACIÓN WINDOWS         *
+**************************************
+
+📅 Fecha y Hora: {{ fecha_hora }}
+
+==============================
+🖥️  DATOS DEL SISTEMA
+==============================
+- Nombre del host: {{ sistema.hostname }}
+- Sistema operativo: {{ sistema.os_name }}
+- Versión: {{ sistema.os_version }}
+
+==============================
+🛑  SERVICIOS DETENIDOS
+==============================
+{% if servicios_det == [] %}
+Todos los servicios están en ejecución.
+{% else %}
+| Servicio                     | Estado     |
+|-----------------------------|------------|
+{% for servicio in servicios_det %}
+| {{ servicio.name | ljust(28) }} | {{ servicio.state | capitalize }} |
+{% endfor %}
+{% endif %}
+
+==============================
+💾  ESPACIO EN DISCO
+==============================
+| Unidad  | Total | Libre | Usado |
+|---------|-------|-------|-------|
+{% for unidad in espacio_disco %}
+| {{ unidad.drive }}     | {{ unidad.total }} | {{ unidad.free }} | {{ unidad.used }} |
+{% endfor %}
+
+**************************************
+*       FIN DEL REPORTE        ✅     *
+**************************************
