@@ -1,26 +1,26 @@
-Validación de sistema - {{ fecha }} {{ hora }}
-==================================================
+ValidaciÃ³n de sistema - {{ fecha }} {{ hora }}
+===============================================
 
-?? Información del sistema:
+InformaciÃ³n del sistema:
 - Nombre del equipo: {{ sistema.hostname }}
 - Sistema operativo: {{ sistema.os_name }}
-- Versión del sistema: {{ sistema.os_version }}
+- VersiÃ³n del sistema: {{ sistema.os_version }}
 
-?? Servicios detenidos:
+Servicios detenidos:
 {% for servicio in servicios_det %}
 - {{ servicio.Name }} ({{ servicio.Status }})
 {% else %}
 - Ninguno
 {% endfor %}
 
-?? Espacio en disco:
+Espacio en disco:
 {% for disco in espacio_disco %}
-- Unidad {{ disco.drive }}: 
-    Total: {{ disco.total }} 
-    Usado: {{ disco.used }} 
-    Libre: {{ disco.free }}
+- Unidad {{ disco.drive }}:
+  Total: {{ disco.total }}
+  Usado: {{ disco.used }}
+  Libre: {{ disco.free }}
 {% else %}
 - No se detectaron unidades
 {% endfor %}
 
-==================================================
+===============================================
