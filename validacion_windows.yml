@@ -1,31 +1,58 @@
-- name: Validación y mantenimiento en servidor Windows
-  hosts: trendmicropruebas
-  gather_facts: yes
-
+- name: Validación de estado del sistema Windows
+  hosts: windows
+  gather_facts: no
+  vars:
+    ruta_log: "C:\\VikoLogs\\validacion_log.txt"
   tasks:
-    - name: Mostrar información del sistema
-      debug:
-        var: ansible_facts
 
-    - name: Ejecutar liberador de espacio en disco (Cleanmgr)
-      win_command: cleanmgr /sagerun:1
-      register: cleanmgr_result
-      ignore_errors: true
+    - name: Crear carpeta de logs si no existe
+      win_file:
+        path: "C:\\VikoLogs"
+        state: directory
 
-    - name: Mostrar resultado de cleanmgr
-      debug:
-        var: cleanmgr_result.stdout_lines
-
-    - name: Ejecutar script de PowerShell personalizado
+    - name: Obtener información del sistema
       win_shell: |
-        Write-Host "→ Iniciando validación del sistema..."
-        Get-ComputerInfo | Select-Object OSName, OSVersion, CsTotalPhysicalMemory
-        Write-Host "`nTop 5 procesos por uso de CPU:"
-        Get-Process | Sort-Object CPU -Descending | Select-Object Name, CPU -First 5
-        Write-Host "`nÚltimos 5 eventos del log del sistema:"
-        Get-EventLog -LogName System -Newest 5 | Select-Object TimeGenerated, EntryType, Source, EventID, Message
-      register: powershell_output
+        [PSCustomObject]@{
+          hostname = $env:COMPUTERNAME
+          os_name = (Get-CimInstance Win32_OperatingSystem).Caption
+          os_version = (Get-CimInstance Win32_OperatingSystem).Version
+        } | ConvertTo-Json
+      register: sistema_raw
 
-    - name: Mostrar resultado del script de PowerShell
-      debug:
-        var: powershell_output.stdout_lines
+    - name: Parsear info del sistema
+      set_fact:
+        sistema: "{{ sistema_raw.stdout | from_json }}"
+
+    - name: Obtener servicios detenidos
+      win_shell: |
+        Get-Service | Where-Object { $_.Status -eq 'Stopped' } | Select-Object Name, Status | ConvertTo-Json
+      register: servicios_det_raw
+
+    - name: Parsear servicios detenidos
+      set_fact:
+        servicios_det: "{{ servicios_det_raw.stdout | from_json | default([]) }}"
+
+    - name: Obtener espacio en disco
+      win_shell: |
+        Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name, @{Name='Total';Expression={[math]::round($_.Used + $_.Free / 1GB,2)}}, @{Name='Free';Expression={[math]::round($_.Free / 1GB,2)}}, @{Name='Used';Expression={[math]::round($_.Used / 1GB,2)}} | ConvertTo-Json
+      register: disco_raw
+
+    - name: Parsear espacio en disco
+      set_fact:
+        espacio_disco: >
+          {{ disco_raw.stdout | from_json | map('combine', {
+            'drive': attribute('Name'),
+            'total': attribute('Total') ~ ' GB',
+            'free': attribute('Free') ~ ' GB',
+            'used': attribute('Used') ~ ' GB'
+          }) | list }}
+
+    - name: Registrar fecha y hora actual
+      set_fact:
+        fecha_hora: "{{ lookup('pipe', 'date /T && time /T') }}"
+
+    - name: Crear log formateado
+      win_template:
+        src: templates/validacion_log.j2
+        dest: "{{ ruta_log }}"
+        force: true
