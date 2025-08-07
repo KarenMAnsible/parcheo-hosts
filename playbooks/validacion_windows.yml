@@ -41,13 +41,20 @@
     - name: Parsear espacio en disco
       set_fact:
         espacio_disco: >
-          {{ disco_raw.stdout | from_json | map('combine', {
-            'drive': attribute('Name'),
-            'total': attribute('Total') ~ ' GB',
-            'free': attribute('Free') ~ ' GB',
-            'used': attribute('Used') ~ ' GB'
-          }) | list }}
-
+          {{ disco_raw.stdout | from_json 
+            | map('extract', {
+                'Name': 'drive',
+                'Total': 'total',
+                'Free': 'free',
+                'Used': 'used'
+            }) 
+            | map('combine', {
+                'total': lambda x: x.total ~ ' GB',
+                'free':  lambda x: x.free  ~ ' GB',
+                'used':  lambda x: x.used  ~ ' GB'
+            }) 
+            | list }}
+   
     - name: Registrar fecha y hora actual
       set_fact:
         fecha_hora: "{{ lookup('pipe', 'date /T && time /T') }}"
