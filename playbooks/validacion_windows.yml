@@ -1,6 +1,6 @@
 ---
 - name: Validación de estado del sistema Windows
-  hosts: windows
+  hosts: all
   gather_facts: no
   vars:
     ruta_log: "C:\\VikoLogs\\validacion_log.txt"
