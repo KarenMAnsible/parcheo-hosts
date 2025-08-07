@@ -1,9 +1,10 @@
 ---
-- name: ValidaciÃ³n de estado del sistema Windows
-  hosts: Windows
+- name: Validación de estado del sistema Windows
+  hosts: windows
   gather_facts: no
   vars:
     ruta_log: "C:\\VikoLogs\\validacion_log.txt"
+
   tasks:
 
     - name: Crear carpeta de logs si no existe
@@ -11,18 +12,18 @@
         path: "C:\\VikoLogs"
         state: directory
 
-    - name: Obtener informaciÃ³n del sistema
+    - name: Obtener información del sistema
       win_shell: |
         [PSCustomObject]@{
-          hostname = $env:COMPUTERNAME
-          os_name = (Get-CimInstance Win32_OperatingSystem).Caption
+          hostname   = $env:COMPUTERNAME
+          os_name    = (Get-CimInstance Win32_OperatingSystem).Caption
           os_version = (Get-CimInstance Win32_OperatingSystem).Version
         } | ConvertTo-Json
       register: sistema_raw
 
-    - name: Parsear info del sistema
+    - name: Parsear información del sistema
       set_fact:
-        sistema: "{{ sistema_raw.stdout | from_json }}"
+        sistema: "{{ sistema_raw.stdout | from_json | default({}) }}"
 
     - name: Obtener servicios detenidos
       win_shell: |
@@ -35,32 +36,27 @@
 
     - name: Obtener espacio en disco
       win_shell: |
-        Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name, @{Name='Total';Expression={[math]::round($_.Used + $_.Free / 1GB,2)}}, @{Name='Free';Expression={[math]::round($_.Free / 1GB,2)}}, @{Name='Used';Expression={[math]::round($_.Used / 1GB,2)}} | ConvertTo-Json
+        Get-PSDrive -PSProvider 'FileSystem' | Select-Object Name, @{Name='Total';Expression={$_.Used + $_.Free}}, Used, Free | ConvertTo-Json
       register: disco_raw
 
     - name: Parsear espacio en disco
       set_fact:
         espacio_disco: >
-          {{ disco_raw.stdout | from_json 
-            | map('extract', {
-                'Name': 'drive',
-                'Total': 'total',
-                'Free': 'free',
-                'Used': 'used'
-            }) 
-            | map('combine', {
-                'total': lambda x: x.total ~ ' GB',
-                'free':  lambda x: x.free  ~ ' GB',
-                'used':  lambda x: x.used  ~ ' GB'
-            }) 
-            | list }}
-   
+          {{
+            disco_raw.stdout | from_json | map('combine', {
+              'drive': attribute('Name'),
+              'total': attribute('Total') ~ ' GB',
+              'free': attribute('Free') ~ ' GB',
+              'used': attribute('Used') ~ ' GB'
+            }) | list
+          }}
+
     - name: Registrar fecha y hora actual
       set_fact:
-        fecha_hora: "{{ lookup('pipe', 'date /T && time /T') }}"
+        fecha: "{{ lookup('pipe', 'date /T') }}"
+        hora: "{{ lookup('pipe', 'time /T') }}"
 
-    - name: Crear log formateado
+    - name: Generar log en formato Jinja2
       win_template:
         src: templates/validacion_log.j2
         dest: "{{ ruta_log }}"
-        force: true
