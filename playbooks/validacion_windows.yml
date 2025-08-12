@@ -1,5 +1,5 @@
 ---
-- name: Validación y Parcheo de Servidor Windows
+- name: Validación y Parcheo de Servidor Windows (con CSV para Excel)
   hosts: all
   gather_facts: no
   tasks:
@@ -69,7 +69,7 @@
         reboot: yes
       register: updates_installed
 
-    # --- Obtener historial de actualizaciones ---
+    # --- Historial de parches instalados ---
     - name: Obtener historial de parches instalados
       win_shell: |
         Get-HotFix | Select-Object Description, HotFixID, InstalledOn |
@@ -77,7 +77,7 @@
         ConvertTo-Json -Depth 3
       register: updates_history
 
-    # --- Crear log final ---
+    # --- Log legible en TXT (con mensaje si no hay updates) ---
     - name: Crear log de validación y parcheo en texto plano
       win_copy:
         content: |
@@ -99,8 +99,63 @@
           {{ disk_info.stdout }}
 
           Actualizaciones instaladas en esta ejecución:
-          {{ updates_installed.updates | default([]) }}
+          {% if (updates_installed.updates | default([]) | length) > 0 %}
+          {{ updates_installed.updates | to_nice_json }}
+          {% else %}
+          Sin actualizaciones pendientes
+          {% endif %}
 
           Historial de parches instalados:
           {{ updates_history.stdout }}
         dest: "{{ desktop_path }}\\LogsAnsible\\validacion_y_parcheo_windows.txt"
+
+    # ===== Exportar a CSV para abrir en Excel =====
+    - name: Exportar servicios no en Running a CSV
+      win_shell: |
+        Get-Service | Where-Object { $_.Status -ne 'Running' } |
+        Select-Object Name, DisplayName, Status, StartType |
+        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Servicios_NoRunning.csv" -NoTypeInformation -Encoding UTF8
+
+    - name: Exportar espacio en disco a CSV
+      win_shell: |
+        Get-PSDrive -PSProvider FileSystem |
+        Select-Object Name,
+          @{N="Free_GB";E={[math]::Round($_.Free/1GB,2)}},
+          @{N="Used_GB";E={[math]::Round($_.Used/1GB,2)}},
+          @{N="Total_GB";E={[math]::Round(($_.Used/1GB + $_.Free/1GB),2)}} |
+        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Espacio_Disco.csv" -NoTypeInformation -Encoding UTF8
+
+    - name: Exportar top CPU a CSV
+      win_shell: |
+        Get-Process | Sort-Object CPU -Descending |
+        Select-Object -First 5 Name, CPU |
+        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\TopCPU.csv" -NoTypeInformation -Encoding UTF8
+
+    - name: Exportar últimos eventos de Sistema a CSV
+      win_shell: |
+        Get-EventLog -LogName System -Newest 50 |
+        Select-Object TimeGenerated, EntryType, Source, EventID, Message |
+        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Eventos_Sistema.csv" -NoTypeInformation -Encoding UTF8
+
+    - name: Exportar historial de parches a CSV
+      win_shell: |
+        Get-HotFix | Select-Object Description, HotFixID, InstalledOn |
+        Sort-Object InstalledOn -Descending |
+        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Historial_Parcheo.csv" -NoTypeInformation -Encoding UTF8
+
+    - name: Exportar actualizaciones instaladas en esta ejecución a CSV
+      win_shell: |
+        $json = @'
+        {{ (updates_installed.updates | default([]) | to_nice_json) }}
+        '@
+        $obj = $json | ConvertFrom-Json
+        if ($null -eq $obj) { $obj = @() }
+        $arr = @()
+        foreach ($u in $obj) {
+          $arr += [pscustomobject]@{
+            Title    = $u.title
+            KB       = ($u.kb | Out-String).Trim()
+            Category = ($u.categories -join ',')
+          }
+        }
+        $arr | Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Updates_Instalados_Ejecucion.csv" -NoTypeInformation -Encoding UTF8
