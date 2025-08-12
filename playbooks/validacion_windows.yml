@@ -29,7 +29,14 @@
         Get-PSDrive -PSProvider FileSystem | Select-Object Name,Free,Used, @{Name="TotalGB";Expression={[math]::round($_.Used/1GB + $_.Free/1GB, 2)}} | ConvertTo-Json
       register: disk_info
 
-    - name: Crear log de validación usando plantilla
-      win_template:
-        src: logs_windows.j2
+    - name: Crear log de validación en texto plano
+      win_copy:
+        content: |
+          ==== Validación de Servidor Windows ====
+          Servicios:
+          {{ service_info.stdout }}
+
+          Espacio en disco:
+          {{ disk_info.stdout }}
         dest: "{{ desktop_path }}\\LogsAnsible\\validacion_windows.txt"
+
