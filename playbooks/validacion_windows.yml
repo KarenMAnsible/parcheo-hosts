@@ -1,5 +1,5 @@
 ---
-- name: Validación y Parcheo de Servidor Windows (con CSV para Excel)
+- name: Validación y Parcheo de Servidor Windows (Excel único)
   hosts: all
   gather_facts: no
   tasks:
@@ -77,7 +77,7 @@
         ConvertTo-Json -Depth 3
       register: updates_history
 
-    # --- Log legible en TXT (con mensaje si no hay updates) ---
+    # --- Log legible en TXT ---
     - name: Crear log de validación y parcheo en texto plano
       win_copy:
         content: |
@@ -109,53 +109,55 @@
           {{ updates_history.stdout }}
         dest: "{{ desktop_path }}\\LogsAnsible\\validacion_y_parcheo_windows.txt"
 
-    # ===== Exportar a CSV para abrir en Excel =====
-    - name: Exportar servicios no en Running a CSV
+    # --- Generar Excel único con todas las hojas ---
+    - name: Generar un solo Excel con todas las hojas
       win_shell: |
-        Get-Service | Where-Object { $_.Status -ne 'Running' } |
-        Select-Object Name, DisplayName, Status, StartType |
-        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Servicios_NoRunning.csv" -NoTypeInformation -Encoding UTF8
+        $xlsx = "{{ desktop_path }}\LogsAnsible\Reporte_Validacion_Parcheo.xlsx"
 
-    - name: Exportar espacio en disco a CSV
-      win_shell: |
-        Get-PSDrive -PSProvider FileSystem |
-        Select-Object Name,
-          @{N="Free_GB";E={[math]::Round($_.Free/1GB,2)}},
-          @{N="Used_GB";E={[math]::Round($_.Used/1GB,2)}},
-          @{N="Total_GB";E={[math]::Round(($_.Used/1GB + $_.Free/1GB),2)}} |
-        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Espacio_Disco.csv" -NoTypeInformation -Encoding UTF8
-
-    - name: Exportar top CPU a CSV
-      win_shell: |
-        Get-Process | Sort-Object CPU -Descending |
-        Select-Object -First 5 Name, CPU |
-        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\TopCPU.csv" -NoTypeInformation -Encoding UTF8
-
-    - name: Exportar últimos eventos de Sistema a CSV
-      win_shell: |
-        Get-EventLog -LogName System -Newest 50 |
-        Select-Object TimeGenerated, EntryType, Source, EventID, Message |
-        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Eventos_Sistema.csv" -NoTypeInformation -Encoding UTF8
-
-    - name: Exportar historial de parches a CSV
-      win_shell: |
-        Get-HotFix | Select-Object Description, HotFixID, InstalledOn |
-        Sort-Object InstalledOn -Descending |
-        Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Historial_Parcheo.csv" -NoTypeInformation -Encoding UTF8
-
-    - name: Exportar actualizaciones instaladas en esta ejecución a CSV
-      win_shell: |
-        $json = @'
-        {{ (updates_installed.updates | default([]) | to_nice_json) }}
-        '@
-        $obj = $json | ConvertFrom-Json
-        if ($null -eq $obj) { $obj = @() }
-        $arr = @()
-        foreach ($u in $obj) {
-          $arr += [pscustomobject]@{
-            Title    = $u.title
-            KB       = ($u.kb | Out-String).Trim()
-            Category = ($u.categories -join ',')
+        function Ensure-Module($Name){
+          if (-not (Get-Module -ListAvailable -Name $Name)) {
+            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+              Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers
+            }
+            if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted') {
+              Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            }
+            Install-Module -Name $Name -Force -Scope AllUsers
           }
+          Import-Module $Name -Force
         }
-        $arr | Export-Csv -Path "{{ desktop_path }}\\LogsAnsible\\Updates_Instalados_Ejecucion.csv" -NoTypeInformation -Encoding UTF8
+
+        Ensure-Module -Name ImportExcel
+
+        $services = @'
+        {{ service_info.stdout }}
+        '@ | ConvertFrom-Json
+
+        $disk = @'
+        {{ disk_info.stdout }}
+        '@ | ConvertFrom-Json
+
+        $topcpu = @'
+        {{ top_cpu.stdout }}
+        '@ | ConvertFrom-Json
+
+        $events = @'
+        {{ last_events.stdout }}
+        '@ | ConvertFrom-Json
+
+        $history = @'
+        {{ updates_history.stdout }}
+        '@ | ConvertFrom-Json
+
+        $installed = @'
+        {{ (updates_installed.updates | default([]) | to_nice_json) }}
+        '@ | ConvertFrom-Json
+        if ($null -eq $installed) { $installed = @() }
+
+        # Crear Excel con todas las hojas
+        $services | Export-Excel -Path $xlsx -WorksheetName 'Servicios_NoRunning' -AutoSize -TableName 'Servicios' -ClearSheet
+        $disk     | Export-Excel -Path $xlsx -WorksheetName 'Espacio_Disco'     -AutoSize -TableName 'Discos'   -Append
+        $topcpu   | Export-Excel -Path $xlsx -WorksheetName 'TopCPU'            -AutoSize -TableName 'TopCPU'   -Append
+        $events   | Export-Excel -Path $xlsx -WorksheetName 'Eventos_Sistema'   -AutoSize -TableName 'Eventos'  -Append
+        $history  | Export-Excel -Path $xlsx -WorksheetName 'Historial_Parcheo' -AutoSize -TableName 'Historial'-Append
+        $installed| Export-Excel -Path $xlsx -WorksheetName 'Updates_Ejecucion' -AutoSize -TableName 'UpdatesRun'-Append
