@@ -1,5 +1,5 @@
 ---
-- name: Validación de servidor Windows
+- name: Validación y Parcheo de Servidor Windows
   hosts: all
   gather_facts: no
   tasks:
@@ -18,25 +18,89 @@
         path: "{{ desktop_path }}\\LogsAnsible"
         state: directory
 
-    - name: Verificar estado de servicios (sin módulo ansible.windows)
+    # --- Información general del sistema ---
+    - name: Obtener versión de Windows y RAM
       win_shell: |
-        Get-Service | Select-Object Name, DisplayName, Status, StartType |
-          ConvertTo-Json -Depth 2
-      register: service_info   
+        $os = Get-CimInstance Win32_OperatingSystem
+        [pscustomobject]@{
+          WindowsVersion = $os.Caption
+          BuildNumber    = $os.BuildNumber
+          RAM_GB         = [math]::Round($os.TotalVisibleMemorySize/1MB,2)
+        } | ConvertTo-Json -Depth 3
+      register: system_info
 
+    - name: Top 5 procesos con más uso de CPU
+      win_shell: |
+        Get-Process | Sort-Object CPU -Descending | 
+        Select-Object -First 5 Name, CPU |
+        ConvertTo-Json -Depth 3
+      register: top_cpu
+
+    - name: Últimos 5 eventos del log de sistema
+      win_shell: |
+        Get-EventLog -LogName System -Newest 5 |
+        Select-Object TimeGenerated, EntryType, Source, EventID, Message |
+        ConvertTo-Json -Depth 3
+      register: last_events
+
+    # --- Verificación de servicios ---
+    - name: Verificar servicios detenidos o fallando
+      win_shell: |
+        Get-Service | Where-Object { $_.Status -ne 'Running' } |
+        Select-Object Name, DisplayName, Status, StartType |
+        ConvertTo-Json -Depth 3
+      register: service_info
+
+    # --- Revisión de espacio en disco ---
     - name: Verificar espacio en disco
       win_shell: |
-        Get-PSDrive -PSProvider FileSystem | Select-Object Name,Free,Used, @{Name="TotalGB";Expression={[math]::round($_.Used/1GB + $_.Free/1GB, 2)}} | ConvertTo-Json
+        Get-PSDrive -PSProvider FileSystem |
+        Select-Object Name,Free,Used, @{Name="TotalGB";Expression={[math]::round($_.Used/1GB + $_.Free/1GB, 2)}} |
+        ConvertTo-Json
       register: disk_info
 
-    - name: Crear log de validación en texto plano
+    # --- Instalación de actualizaciones ---
+    - name: Instalar todas las actualizaciones disponibles
+      win_updates:
+        category_names:
+          - SecurityUpdates
+          - CriticalUpdates
+          - UpdateRollups
+        reboot: yes
+      register: updates_installed
+
+    # --- Obtener historial de actualizaciones ---
+    - name: Obtener historial de parches instalados
+      win_shell: |
+        Get-HotFix | Select-Object Description, HotFixID, InstalledOn |
+        Sort-Object InstalledOn -Descending |
+        ConvertTo-Json -Depth 3
+      register: updates_history
+
+    # --- Crear log final ---
+    - name: Crear log de validación y parcheo en texto plano
       win_copy:
         content: |
-          ==== Validación de Servidor Windows ====
-          Servicios:
+          ==== Validación y Parcheo de Servidor Windows ====
+
+          Información del sistema:
+          {{ system_info.stdout }}
+
+          Top 5 procesos con mayor uso de CPU:
+          {{ top_cpu.stdout }}
+
+          Últimos 5 eventos del log de sistema:
+          {{ last_events.stdout }}
+
+          Servicios detenidos o fallando:
           {{ service_info.stdout }}
 
           Espacio en disco:
           {{ disk_info.stdout }}
-        dest: "{{ desktop_path }}\\LogsAnsible\\validacion_windows.txt"
 
+          Actualizaciones instaladas en esta ejecución:
+          {{ updates_installed.updates | default([]) }}
+
+          Historial de parches instalados:
+          {{ updates_history.stdout }}
+        dest: "{{ desktop_path }}\\LogsAnsible\\validacion_y_parcheo_windows.txt"
