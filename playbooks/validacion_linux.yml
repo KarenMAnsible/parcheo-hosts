@@ -1,0 +1,79 @@
+- name: Validación de servidor Linux
+  hosts: linux
+  gather_facts: true
+  become: true
+
+  vars:
+    # Ruta del log en TEXTO PLANO (se sobrescribe en cada ejecución)
+    log_path: "/var/log/ansible/validacion_linux.log"
+    # Servicios a verificar (ajústalo a tus realidades)
+    services_to_check:
+      - sshd
+      - cron
+      - rsyslog
+
+  tasks:
+    - name: Asegurar carpeta del log
+      ansible.builtin.file:
+        path: "{{ log_path | dirname }}"
+        state: directory
+        mode: "0755"
+
+    - name: Uptime legible
+      ansible.builtin.shell: "uptime -p"
+      register: uptime
+      changed_when: false
+
+    - name: Último arranque
+      ansible.builtin.shell: "who -b | awk '{print $3\" \"$4}'"
+      register: last_boot
+      changed_when: false
+
+    - name: Memoria (free -h)
+      ansible.builtin.command: "free -h"
+      register: mem
+      changed_when: false
+
+    - name: Discos (df -h)
+      ansible.builtin.command: "df -h"
+      register: disks
+      changed_when: false
+
+    - name: Estado de servicios (systemd)
+      ansible.builtin.shell: "systemctl is-active {{ item }}"
+      loop: "{{ services_to_check }}"
+      register: svc_status
+      failed_when: false
+      changed_when: false
+
+    - name: Construir contenido del log (texto plano)
+      ansible.builtin.set_fact:
+        log_content: |-
+          === Validación Linux ===
+          Host: {{ ansible_facts.fqdn | default(inventory_hostname) }} ({{ inventory_hostname }})
+          Fecha: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+          SO: {{ ansible_distribution }} {{ ansible_distribution_version }} (Kernel {{ ansible_kernel }})
+
+          [Estado]
+          Uptime: {{ uptime.stdout }}
+          Último arranque: {{ last_boot.stdout | default('N/D') }}
+          Carga 1/5/15: {{ ansible_facts.loadavg['1'] }} {{ ansible_facts.loadavg['5'] }} {{ ansible_facts.loadavg['15'] }}
+          CPU (vCPUs): {{ ansible_facts.processor_vcpus | default('N/D') }}
+          Memoria total: {{ ansible_facts.memtotal_mb | default('N/D') }} MB
+
+          [Memoria]
+          {{ mem.stdout }}
+
+          [Discos]
+          {{ disks.stdout }}
+
+          [Servicios]
+          {% for r in svc_status.results %}
+          - {{ r.item }}: {{ 'OK' if r.rc == 0 else 'FALLA' }}
+          {% endfor %}
+
+    - name: Escribir log en {{ log_path }}
+      ansible.builtin.copy:
+        dest: "{{ log_path }}"
+        content: "{{ log_content }}"
+        mode: "0644"
