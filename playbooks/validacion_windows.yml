@@ -18,9 +18,11 @@
         path: "{{ desktop_path }}\\LogsAnsible"
         state: directory
 
-    - name: Verificar estado de servicios críticos
-      win_service_info:
-      register: service_info
+    - name: Verificar estado de servicios (sin módulo ansible.windows)
+      win_shell: |
+        Get-Service | Select-Object Name, DisplayName, Status, StartType |
+          ConvertTo-Json -Depth 2
+      register: service_info   
 
     - name: Verificar espacio en disco
       win_shell: |
