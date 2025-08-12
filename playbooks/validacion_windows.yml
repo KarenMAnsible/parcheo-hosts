@@ -1,5 +1,5 @@
 ---
-- name: Validación y Parcheo de Servidor Windows (Excel único)
+- name: Validación y Parcheo de Servidor Windows (Excel o ZIP fallback)
   hosts: all
   gather_facts: no
   tasks:
@@ -31,7 +31,7 @@
 
     - name: Top 5 procesos con más uso de CPU
       win_shell: |
-        Get-Process | Sort-Object CPU -Descending | 
+        Get-Process | Sort-Object CPU -Descending |
         Select-Object -First 5 Name, CPU |
         ConvertTo-Json -Depth 3
       register: top_cpu
@@ -109,25 +109,17 @@
           {{ updates_history.stdout }}
         dest: "{{ desktop_path }}\\LogsAnsible\\validacion_y_parcheo_windows.txt"
 
-    # --- Generar Excel único con todas las hojas ---
-    - name: Generar un solo Excel con todas las hojas
+    # ====== EXCEL ÚNICO (si ImportExcel está disponible) O ZIP DE CSV (fallback) ======
+
+    - name: Comprobar si el módulo ImportExcel está instalado
+      win_shell: |
+        if (Get-Module -ListAvailable -Name ImportExcel) { 'FOUND' } else { 'MISSING' }
+      register: importexcel_status
+
+    - name: Generar Excel único con ImportExcel
       win_shell: |
         $xlsx = "{{ desktop_path }}\LogsAnsible\Reporte_Validacion_Parcheo.xlsx"
-
-        function Ensure-Module($Name){
-          if (-not (Get-Module -ListAvailable -Name $Name)) {
-            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-              Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers
-            }
-            if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted') {
-              Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-            }
-            Install-Module -Name $Name -Force -Scope AllUsers
-          }
-          Import-Module $Name -Force
-        }
-
-        Ensure-Module -Name ImportExcel
+        Import-Module ImportExcel -Force
 
         $services = @'
         {{ service_info.stdout }}
@@ -154,10 +146,61 @@
         '@ | ConvertFrom-Json
         if ($null -eq $installed) { $installed = @() }
 
-        # Crear Excel con todas las hojas
         $services | Export-Excel -Path $xlsx -WorksheetName 'Servicios_NoRunning' -AutoSize -TableName 'Servicios' -ClearSheet
         $disk     | Export-Excel -Path $xlsx -WorksheetName 'Espacio_Disco'     -AutoSize -TableName 'Discos'   -Append
         $topcpu   | Export-Excel -Path $xlsx -WorksheetName 'TopCPU'            -AutoSize -TableName 'TopCPU'   -Append
         $events   | Export-Excel -Path $xlsx -WorksheetName 'Eventos_Sistema'   -AutoSize -TableName 'Eventos'  -Append
         $history  | Export-Excel -Path $xlsx -WorksheetName 'Historial_Parcheo' -AutoSize -TableName 'Historial'-Append
         $installed| Export-Excel -Path $xlsx -WorksheetName 'Updates_Ejecucion' -AutoSize -TableName 'UpdatesRun'-Append
+      when: "'FOUND' in importexcel_status.stdout"
+
+    - name: Exportar CSVs y empaquetar en ZIP (fallback sin ImportExcel)
+      win_shell: |
+        $base = "{{ desktop_path }}\LogsAnsible"
+        $svc = Join-Path $base 'Servicios_NoRunning.csv'
+        $dsk = Join-Path $base 'Espacio_Disco.csv'
+        $cpu = Join-Path $base 'TopCPU.csv'
+        $evt = Join-Path $base 'Eventos_Sistema.csv'
+        $hst = Join-Path $base 'Historial_Parcheo.csv'
+        $upd = Join-Path $base 'Updates_Instalados_Ejecucion.csv'
+        $zip = Join-Path $base 'Reporte_Validacion_Parcheo.zip'
+
+        Get-Service | Where-Object { $_.Status -ne 'Running' } |
+          Select-Object Name, DisplayName, Status, StartType |
+          Export-Csv -Path $svc -NoTypeInformation -Encoding UTF8
+
+        Get-PSDrive -PSProvider FileSystem |
+          Select-Object Name,
+            @{N="Free_GB";E={[math]::Round($_.Free/1GB,2)}},
+            @{N="Used_GB";E={[math]::Round($_.Used/1GB,2)}},
+            @{N="Total_GB";E={[math]::Round(($_.Used/1GB + $_.Free/1GB),2)}} |
+          Export-Csv -Path $dsk -NoTypeInformation -Encoding UTF8
+
+        Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 Name, CPU |
+          Export-Csv -Path $cpu -NoTypeInformation -Encoding UTF8
+
+        Get-EventLog -LogName System -Newest 50 |
+          Select-Object TimeGenerated, EntryType, Source, EventID, Message |
+          Export-Csv -Path $evt -NoTypeInformation -Encoding UTF8
+
+        Get-HotFix | Select-Object Description, HotFixID, InstalledOn |
+          Sort-Object InstalledOn -Descending |
+          Export-Csv -Path $hst -NoTypeInformation -Encoding UTF8
+
+        $json = @'
+        {{ (updates_installed.updates | default([]) | to_nice_json) }}
+        '@
+        $obj = $json | ConvertFrom-Json
+        if ($null -eq $obj) { $obj = @() }
+        $arr = foreach ($u in $obj) {
+          [pscustomobject]@{
+            Title    = $u.title
+            KB       = ($u.kb | Out-String).Trim()
+            Category = ($u.categories -join ',')
+          }
+        }
+        $arr | Export-Csv -Path $upd -NoTypeInformation -Encoding UTF8
+
+        if (Test-Path $zip) { Remove-Item $zip -Force }
+        Compress-Archive -Path $svc,$dsk,$cpu,$evt,$hst,$upd -DestinationPath $zip -Force
+      when: "'MISSING' in importexcel_status.stdout"
