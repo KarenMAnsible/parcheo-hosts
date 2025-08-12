@@ -20,7 +20,7 @@
         mode: "0755"
 
     - name: Uptime legible
-      ansible.builtin.shell: "uptime -p"
+      ansible.builtin.shell: "uptime"
       register: uptime
       changed_when: false
 
