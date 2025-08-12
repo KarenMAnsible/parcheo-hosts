@@ -51,14 +51,15 @@
     # === BLOQUE DE PARCHES / UPDATES ===
     - name: Aplicar parches del sistema (según distro)
       block:
-        # SUSE / SLES
-        - name: SLES | Actualizar todo con zypper
-          ansible.builtin.zypper:
-            name: '*'
-            state: latest
-            update_cache: yes
+        # SUSE / SLES (sin módulo, usando shell)
+        - name: SLES | Actualizar todo con zypper (shell)
+          ansible.builtin.shell: |
+            zypper refresh && zypper update -y
+          args:
+            warn: false
           when: ansible_facts.os_family | lower == 'suse'
-          register: patch_result
+          register: zypper_out
+          changed_when: "'Nothing to do' not in (zypper_out.stdout | default('') ~ zypper_out.stderr | default(''))"
 
         # Debian/Ubuntu
         - name: Debian/Ubuntu | Update cache
@@ -71,7 +72,7 @@
             upgrade: dist
             autoremove: yes
           when: ansible_facts.os_family | lower == 'debian'
-          register: patch_result
+          register: apt_upgrade
 
         # RHEL/CentOS/Rocky/Alma
         - name: RedHat-like | Actualizar todo
@@ -80,7 +81,7 @@
             state: latest
             update_cache: yes
           when: ansible_facts.os_family | lower == 'redhat'
-          register: patch_result
+          register: yum_update
 
       rescue:
         - name: Guardar error de parchado
@@ -91,9 +92,15 @@
         - name: Resumen de parchado
           ansible.builtin.set_fact:
             patch_summary: >-
-              {% if patch_error is defined %}FALLÓ: {{ patch_error }}
-              {% elif patch_result is defined and patch_result is changed %}OK: se aplicaron actualizaciones
-              {% else %}Sin cambios: ya estaba al día{% endif %}
+              {% if patch_error is defined %}
+              FALLÓ: {{ patch_error }}
+              {% elif (zypper_out is defined and zypper_out.changed)
+                   or (apt_upgrade is defined and apt_upgrade.changed)
+                   or (yum_update is defined and yum_update.changed) %}
+              OK: se aplicaron actualizaciones
+              {% else %}
+              Sin cambios: ya estaba al día
+              {% endif %}
 
     # === LOG ===
     - name: Construir contenido del log (texto plano)
