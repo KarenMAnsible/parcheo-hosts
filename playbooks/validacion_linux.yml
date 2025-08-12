@@ -1,3 +1,4 @@
+---
 - name: Validación de servidor Linux
   hosts: linux
   gather_facts: true
@@ -6,7 +7,8 @@
   vars:
     # Ruta del log en TEXTO PLANO (se sobrescribe en cada ejecución)
     log_path: "/var/log/ansible/validacion_linux.log"
-    # Servicios a verificar (ajústalo a tus realidades)
+
+    # Servicios a verificar
     services_to_check:
       - sshd
       - cron
@@ -46,6 +48,54 @@
       failed_when: false
       changed_when: false
 
+    # === BLOQUE DE PARCHES / UPDATES ===
+    - name: Aplicar parches del sistema (según distro)
+      block:
+        # SUSE / SLES
+        - name: SLES | Actualizar todo con zypper
+          ansible.builtin.zypper:
+            name: '*'
+            state: latest
+            update_cache: yes
+          when: ansible_facts.os_family | lower == 'suse'
+          register: patch_result
+
+        # Debian/Ubuntu
+        - name: Debian/Ubuntu | Update cache
+          ansible.builtin.apt:
+            update_cache: yes
+          when: ansible_facts.os_family | lower == 'debian'
+
+        - name: Debian/Ubuntu | Dist-upgrade + autoremove
+          ansible.builtin.apt:
+            upgrade: dist
+            autoremove: yes
+          when: ansible_facts.os_family | lower == 'debian'
+          register: patch_result
+
+        # RHEL/CentOS/Rocky/Alma
+        - name: RedHat-like | Actualizar todo
+          ansible.builtin.yum:
+            name: '*'
+            state: latest
+            update_cache: yes
+          when: ansible_facts.os_family | lower == 'redhat'
+          register: patch_result
+
+      rescue:
+        - name: Guardar error de parchado
+          ansible.builtin.set_fact:
+            patch_error: "{{ ansible_failed_result.msg | default('Error al aplicar parches') }}"
+
+      always:
+        - name: Resumen de parchado
+          ansible.builtin.set_fact:
+            patch_summary: >-
+              {% if patch_error is defined %}FALLÓ: {{ patch_error }}
+              {% elif patch_result is defined and patch_result is changed %}OK: se aplicaron actualizaciones
+              {% else %}Sin cambios: ya estaba al día{% endif %}
+
+    # === LOG ===
     - name: Construir contenido del log (texto plano)
       ansible.builtin.set_fact:
         log_content: |-
@@ -60,6 +110,7 @@
           Carga 1/5/15: {{ ansible_facts.loadavg['1'] | default(uptime.stdout.split()[-3], true) }} {{ ansible_facts.loadavg['5'] | default(uptime.stdout.split()[-2], true) }} {{ ansible_facts.loadavg['15'] | default(uptime.stdout.split()[-1], true) }}
           CPU (vCPUs): {{ ansible_facts.processor_vcpus | default('N/D') }}
           Memoria total: {{ ansible_facts.memtotal_mb | default('N/D') }} MB
+          Parcheo: {{ patch_summary | default('N/D') }}
 
           [Memoria]
           {{ mem.stdout }}
