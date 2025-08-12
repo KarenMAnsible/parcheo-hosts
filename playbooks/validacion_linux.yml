@@ -57,7 +57,7 @@
           [Estado]
           Uptime: {{ uptime.stdout }}
           Último arranque: {{ last_boot.stdout | default('N/D') }}
-          Carga 1/5/15: {{ ansible_facts.loadavg['1'] }} {{ ansible_facts.loadavg['5'] }} {{ ansible_facts.loadavg['15'] }}
+          Carga 1/5/15: {{ ansible_facts.loadavg['1'] | default(uptime.stdout.split()[-3], true) }} {{ ansible_facts.loadavg['5'] | default(uptime.stdout.split()[-2], true) }} {{ ansible_facts.loadavg['15'] | default(uptime.stdout.split()[-1], true) }}
           CPU (vCPUs): {{ ansible_facts.processor_vcpus | default('N/D') }}
           Memoria total: {{ ansible_facts.memtotal_mb | default('N/D') }} MB
 
