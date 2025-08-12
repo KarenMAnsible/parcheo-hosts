@@ -1,44 +1,33 @@
+---
 - name: Validación de servidor Windows
   hosts: all
-  gather_facts: false
+  gather_facts: no
   tasks:
 
     - name: Obtener ruta del escritorio
       win_shell: |
-        [System.Environment]::GetFolderPath('Desktop')
-      register: escritorio
+        [Environment]::GetFolderPath("Desktop")
+      register: desktop_path_raw
+
+    - name: Limpiar ruta del escritorio
+      set_fact:
+        desktop_path: "{{ desktop_path_raw.stdout | trim }}"
 
     - name: Crear carpeta LogsAnsible en el escritorio si no existe
       win_file:
-        path: "{{ escritorio.stdout }}\\LogsAnsible"
+        path: "{{ desktop_path }}\\LogsAnsible"
         state: directory
 
-    - name: Obtener información del sistema
-      win_shell: systeminfo
-      register: sistema
+    - name: Verificar estado de servicios críticos
+      win_service_info:
+      register: service_info
 
-    - name: Obtener espacio en disco
-      win_shell: Get-PSDrive C | Select-Object Used,Free,Name
-      register: espacio_disco
+    - name: Verificar espacio en disco
+      win_shell: |
+        Get-PSDrive -PSProvider FileSystem | Select-Object Name,Free,Used, @{Name="TotalGB";Expression={[math]::round($_.Used/1GB + $_.Free/1GB, 2)}} | ConvertTo-Json
+      register: disk_info
 
-    - name: Obtener servicios activos
-      win_shell: Get-Service | Where-Object {$_.Status -eq "Running"}
-      register: servicios_det
-
-    - name: Generar archivo de log en el escritorio
-      copy:
-        dest: "{{ escritorio.stdout }}\\LogsAnsible\\validacion_log.txt"
-        content: |
-          --- VALIDACIÓN DE SISTEMA WINDOWS ---
-          Fecha: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
-
-          --- Información del sistema ---
-          {{ sistema.stdout }}
-
-          --- Espacio en disco ---
-          {{ espacio_disco.stdout }}
-
-          --- Servicios en ejecución ---
-          {{ servicios_det.stdout }}
-
-        force: true
+    - name: Crear log de validación usando plantilla
+      win_template:
+        src: logs_windows.j2
+        dest: "{{ desktop_path }}\\LogsAnsible\\validacion_windows.txt"
