@@ -179,4 +179,12 @@
       failed_when: false
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: RedHat-like | Guardar
+    - name: RedHat-like | Guardar detalle en el log
+      blockinfile:
+        path: "{{ log_path }}"
+        marker: ""
+        block: |
+          [Parcheo - RedHat-like]
+          Cambios: {{ 'Sí' if yum_upd.changed else 'No' }}
+          {{ yum_hist.stdout | default('Sin historial disponible (yum/dnf history)') }}
+      when: ansible_facts['os_family'] == 'RedHat'
