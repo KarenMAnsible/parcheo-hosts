@@ -63,7 +63,7 @@
           Carga 1/5/15: {{ load_avg.stdout }}
           CPU (vCPUs): {{ vcpus_count }}
           Memoria total: {{ mem_total_gib }}
-      create: yes
+        create: yes
 
     - name: Memoria (free -h)
       shell: free -h
@@ -179,93 +179,4 @@
       failed_when: false
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: RedHat-like | Guardar detalle en el log
-      blockinfile:
-        path: "{{ log_path }}"
-        marker: ""
-        block: |
-          [Parcheo - RedHat-like]
-          Cambios: {{ 'Sí' if yum_upd.changed else 'No' }}
-          {{ yum_hist.stdout | default('Sin historial disponible (yum/dnf history)') }}
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    #######################################################################
-    # RESUMEN & REINICIO CONDICIONAL
-    #######################################################################
-    - name: Marcar resumen de parchado
-      blockinfile:
-        path: "{{ log_path }}"
-        marker: ""
-        block: |
-          [Resumen de parchado]
-          Distribución: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Kernel: {{ ansible_kernel }}
-          Resultado:
-          {% if ansible_facts['os_family'] == 'Debian' %}
-          - Cambios aplicados: {{ 'Sí' if apt_upgrade.changed else 'No' }}
-          {% elif ansible_facts['os_family'] == 'Suse' %}
-          - Cambios aplicados: {{ 'Sí' if (zypper_out.stdout is defined and 'Nothing to do.' not in zypper_out.stdout) else 'No' }}
-          {% elif ansible_facts['os_family'] == 'RedHat' %}
-          - Cambios aplicados: {{ 'Sí' if yum_upd.changed else 'No' }}
-          {% else %}
-          - Cambios aplicados: Indefinido
-          {% endif %}
-
-    # Señales de "reboot requerido" por distro
-    - name: Debian/Ubuntu | ¿Reinicio requerido?
-      stat:
-        path: /var/run/reboot-required
-      register: reboot_req_deb
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Suse/RedHat | ¿Reinicio requerido? (needs-restarting -r)
-      shell: |
-        set -o pipefail
-        if command -v needs-restarting >/dev/null 2>&1; then
-          needs-restarting -r
-        else
-          # Si no existe la utilidad, asumimos no requerido (rc=0)
-          exit 0
-        fi
-      args:
-        executable: /bin/bash
-      register: needs_restarting_cmd
-      changed_when: false
-      failed_when: false
-      when: ansible_facts['os_family'] in ['Suse','RedHat']
-
-    - name: Determinar flag de reinicio
-      set_fact:
-        reboot_needed: >-
-          {{
-            (reboot_req_deb.stat.exists | default(false))
-            or
-            (needs_restarting_cmd.rc is defined and needs_restarting_cmd.rc == 1)
-          }}
-
-    - name: Escribir estado de reinicio en log
-      lineinfile:
-        path: "{{ log_path }}"
-        line: "[Reinicio] Requerido: {{ 'Sí' if reboot_needed else 'No' }}"
-        create: yes
-
-    - name: Reiniciar si es necesario
-      reboot:
-        msg: "Reinicio automatizado por actualización de sistema"
-        connect_timeout: 5
-        reboot_timeout: 1800
-        pre_reboot_delay: 0
-        post_reboot_delay: 30
-        test_command: "whoami"
-      when: reboot_needed
-
-    - name: Post-reboot | Escribir kernel activo
-      shell: uname -r
-      register: kernel_after
-      changed_when: false
-
-    - name: Post-reboot | Registrar kernel en log
-      lineinfile:
-        path: "{{ log_path }}"
-        line: "[Post-reboot] Kernel activo: {{ kernel_after.stdout }}"
-        create: yes
+    - name: RedHat-like | Guardar
