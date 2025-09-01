@@ -59,7 +59,7 @@
         path: "{{ log_path }}"
         line: |
           Uptime: {{ uptime_out.stdout }}
-          Último arranque: {{ last_boot.stdout | default('N/D') }}
+          ltimo arranque: {{ last_boot.stdout | default('N/D') }}
           Carga 1/5/15: {{ load_avg.stdout }}
           CPU (vCPUs): {{ vcpus_count }}
           Memoria total: {{ mem_total_gib }}
