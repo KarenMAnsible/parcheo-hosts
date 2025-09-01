@@ -1,4 +1,4 @@
-- name: Validación de servidor Linux
+- name: Validacion de servidor Linux
   hosts: linux
   gather_facts: yes
   become: yes
@@ -22,7 +22,7 @@
         dest: "{{ log_path }}"
         mode: "0644"
         content: |
-          === Validación Linux ===
+          === Validacion Linux ===
           Host: {{ inventory_hostname }} ({{ ansible_hostname }})
           Fecha: {{ ansible_date_time.iso8601 }}
           SO: {{ ansible_distribution }} {{ ansible_distribution_version }} (Kernel {{ ansible_kernel }})
@@ -34,7 +34,7 @@
       register: uptime_out
       changed_when: false
 
-    - name: Último arranque
+    - name: ultimo arranque
       shell: who -b | awk '{print $3,$4}'
       register: last_boot
       changed_when: false
@@ -59,7 +59,7 @@
         path: "{{ log_path }}"
         line: |
           Uptime: {{ uptime_out.stdout }}
-          Último arranque: {{ last_boot.stdout | default('N/D') }}
+          �ltimo arranque: {{ last_boot.stdout | default('N/D') }}
           Carga 1/5/15: {{ load_avg.stdout }}
           CPU (vCPUs): {{ vcpus_count }}
           Memoria total: {{ mem_total_gib }}
@@ -100,7 +100,7 @@
 
   tasks:
     #######################################################################
-    # PARCHEO POR DISTRIBUCIÓN + CAPTURA DE DETALLE DE PAQUETES
+    # PARCHEO POR DISTRIBUCION + CAPTURA DE DETALLE DE PAQUETES
     #######################################################################
 
     # --- SLES / openSUSE ---
@@ -139,7 +139,7 @@
       register: apt_upgrade
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Debian/Ubuntu | Capturar history de APT (últimas entradas)
+    - name: Debian/Ubuntu | Capturar history de APT (ultimas entradas)
       shell: |
         set -o pipefail
         grep -A3 '^Start-Date:' /var/log/apt/history.log | tail -n 200
@@ -156,12 +156,12 @@
         marker: ""
         block: |
           [Parcheo - Debian/Ubuntu]
-          Cambios: {{ 'Sí' if apt_upgrade.changed else 'No' }}
+          Cambios: {{ 'Si' if apt_upgrade.changed else 'No' }}
           {{ apt_hist.stdout | default('Sin entradas relevantes en /var/log/apt/history.log') }}
       when: ansible_facts['os_family'] == 'Debian'
 
     # --- RedHat / CentOS / Rocky / Alma ---
-    - name: RedHat-like | Actualizar todo (últimas versiones)
+    - name: RedHat-like | Actualizar todo (ultimas versiones)
       yum:
         name: "*"
         state: latest
@@ -185,6 +185,87 @@
         marker: ""
         block: |
           [Parcheo - RedHat-like]
-          Cambios: {{ 'S�' if yum_upd.changed else 'No' }}
+          Cambios: {{ 'Si' if yum_upd.changed else 'No' }}
           {{ yum_hist.stdout | default('Sin historial disponible (yum/dnf history)') }}
       when: ansible_facts['os_family'] == 'RedHat'
+
+    #######################################################################
+    # RESUMEN & REINICIO CONDICIONAL
+    #######################################################################
+    - name: Marcar resumen de parchado
+      blockinfile:
+        path: "{{ log_path }}"
+        marker: ""
+        block: |
+          [Resumen de parchado]
+          Distribucion: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Resultado:
+          {% if ansible_facts['os_family'] == 'Debian' %}
+          - Cambios aplicados: {{ 'Si' if apt_upgrade.changed else 'No' }}
+          {% elif ansible_facts['os_family'] == 'Suse' %}
+          - Cambios aplicados: {{ 'Si' if (zypper_out.stdout is defined and 'Nothing to do.' not in zypper_out.stdout) else 'No' }}
+          {% elif ansible_facts['os_family'] == 'RedHat' %}
+          - Cambios aplicados: {{ 'Si' if yum_upd.changed else 'No' }}
+          {% else %}
+          - Cambios aplicados: Indefinido
+          {% endif %}
+
+    # Senales de "reboot requerido" por distro
+    - name: Debian/Ubuntu | Reinicio requerido?
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_req_deb
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Suse/RedHat | Reinicio requerido? (needs-restarting -r)
+      shell: |
+        set -o pipefail
+        if command -v needs-restarting >/dev/null 2>&1; then
+          needs-restarting -r
+        else
+          # Si no existe la utilidad, asumimos no requerido (rc=0)
+          exit 0
+        fi
+      args:
+        executable: /bin/bash
+      register: needs_restarting_cmd
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] in ['Suse','RedHat']
+
+    - name: Determinar flag de reinicio
+      set_fact:
+        reboot_needed: >-
+          {{
+            (reboot_req_deb.stat.exists | default(false))
+            or
+            (needs_restarting_cmd.rc is defined and needs_restarting_cmd.rc == 1)
+          }}
+
+    - name: Escribir estado de reinicio en log
+      lineinfile:
+        path: "{{ log_path }}"
+        line: "[Reinicio] Requerido: {{ 'Si' if reboot_needed else 'No' }}"
+        create: yes
+
+    - name: Reiniciar si es necesario
+      reboot:
+        msg: "Reinicio automatizado por actualizacion de sistema"
+        connect_timeout: 5
+        reboot_timeout: 1800
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: "whoami"
+      when: reboot_needed
+
+    - name: Post-reboot | Escribir kernel activo
+      shell: uname -r
+      register: kernel_after
+      changed_when: false
+
+    - name: Post-reboot | Registrar kernel en log
+      lineinfile:
+        path: "{{ log_path }}"
+        line: "[Post-reboot] Kernel activo: {{ kernel_after.stdout }}"
+        create: yes
