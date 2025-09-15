@@ -1,0 +1,139 @@
+---
+- name: Desinstalar Zabbix (solo Linux) con verificación
+  hosts: a_desinstalar_zabbix_linux
+  gather_facts: true
+  become: true
+
+  vars:
+    enforce_clean: true
+
+    zbx_linux_pkg_patterns:
+      Debian: ["zabbix-agent", "zabbix-agent2"]
+      RedHat: ["zabbix-agent", "zabbix-agent2"]
+      Suse:   ["zabbix-agent", "zabbix-agent2"]
+
+    zbx_service_names: ["zabbix-agent", "zabbix-agent2"]
+
+    zbx_dirs_linux:
+      - /etc/zabbix
+      - /var/log/zabbix
+      - /var/lib/zabbix
+
+    zbx_repo_files_apt:
+      - /etc/apt/sources.list.d/zabbix.list
+      - /etc/apt/sources.list.d/zabbix-official.list
+    zbx_repo_files_yum:
+      - /etc/yum.repos.d/zabbix.repo
+    zbx_repo_files_zypper:
+      - /etc/zypp/repos.d/zabbix.repo
+
+  tasks:
+    - name: Detectar familia Linux
+      set_fact:
+        linux_family: "{{ ansible_facts.os_family }}"
+      when: ansible_facts.os_family in ["Debian", "RedHat", "Suse"]
+
+    - name: Validar que sea Linux soportado
+      ansible.builtin.assert:
+        that:
+          - linux_family is defined
+        fail_msg: "Este playbook es solo para Linux (Debian/RedHat/Suse)."
+        success_msg: "Host Linux compatible."
+    
+    - name: Detener y deshabilitar servicios Zabbix (si existen)
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop: "{{ zbx_service_names }}"
+      ignore_errors: true
+
+    # Desinstalación universal (usa apt/dnf/yum/zypper según el SO)
+    - name: Determinar paquetes según familia
+      set_fact:
+        zbx_pkgs_linux: "{{ zbx_linux_pkg_patterns[linux_family] | default(['zabbix-agent','zabbix-agent2']) }}"
+
+    - name: Desinstalar paquetes Zabbix (package genérico)
+      ansible.builtin.package:
+        name: "{{ zbx_pkgs_linux }}"
+        state: absent
+
+    # Extra para Debian/Ubuntu: purgar restos (best-effort)
+    - name: Purgar restos en Debian/Ubuntu
+      ansible.builtin.apt:
+        name: "{{ zbx_linux_pkg_patterns['Debian'] }}"
+        state: absent
+        purge: yes
+        update_cache: false
+      when: linux_family == "Debian"
+      ignore_errors: true
+
+    - name: Eliminar archivos de configuración y datos
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ zbx_dirs_linux }}"
+      ignore_errors: true
+
+    - name: Remover repos de Zabbix (APT)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ zbx_repo_files_apt }}"
+      when: linux_family == "Debian"
+      ignore_errors: true
+
+    - name: Remover repos de Zabbix (YUM/DNF)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ zbx_repo_files_yum }}"
+      when: linux_family == "RedHat"
+      ignore_errors: true
+
+    - name: Remover repos de Zabbix (ZYPPER)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ zbx_repo_files_zypper }}"
+      when: linux_family == "Suse"
+      ignore_errors: true
+
+    - name: Limpiar caché de paquetes
+      ansible.builtin.shell: |
+        if command -v apt-get >/dev/null 2>&1; then apt-get clean;
+        elif command -v dnf >/dev/null 2>&1; then dnf clean all;
+        elif command -v yum >/dev/null 2>&1; then yum clean all;
+        elif command -v zypper >/dev/null 2>&1; then zypper clean -a;
+        fi
+      args:
+        warn: false
+      changed_when: false
+
+    # Verificación
+    - name: Verificar que no haya paquetes Zabbix instalados
+      ansible.builtin.shell: |
+        if command -v dpkg >/dev/null 2>&1; then dpkg -l | grep -iE '^ii\s+zabbix-agent' || true;
+        elif command -v rpm >/dev/null 2>&1; then rpm -qa | grep -iE '^zabbix-agent' || true;
+        fi
+      register: zbx_check_linux
+      changed_when: false
+
+    - name: Marcar estado de limpieza
+      set_fact:
+        linux_clean: "{{ (zbx_check_linux.stdout | default('') | trim) == '' }}"
+
+    - name: Resumen de verificación
+      ansible.builtin.debug:
+        msg: |
+          >>> VERIFICACIÓN DE DESINSTALACIÓN (Linux) <<<
+          Familia: {{ linux_family }}
+          Paquetes remanentes: "{{ zbx_check_linux.stdout | default('N/A') | trim }}"
+          Estado final: {{ 'LIMPIO ✅' if linux_clean else 'PENDIENTE ❌' }}
+
+    - name: Fallar si se detectan restos (opcional)
+      ansible.builtin.assert:
+        that:
+          - not enforce_clean or linux_clean
+        fail_msg: "Se detectaron restos de Zabbix tras la desinstalación."
+        success_msg: "Desinstalación verificada correctamente."
