@@ -2,23 +2,33 @@
 - name: Desinstalar Zabbix (solo Linux) con verificación
   hosts: a_desinstalar_zabbix_linux
   gather_facts: true
-  become: true
+  become: "{{ use_sudo_bool }}"
 
   vars:
+    # Valores por defecto si no responden en la Encuesta
     enforce_clean: true
+    use_sudo: true
 
+    # Convertir cadenas de la Encuesta a booleano real
+    enforce_clean_bool: "{{ (enforce_clean | default(true) | string) | lower in ['true','1','yes','si','sí'] }}"
+    use_sudo_bool: "{{ (use_sudo | default(true) | string) | lower in ['true','1','yes','si','sí'] }}"
+
+    # Paquetes por familia Linux
     zbx_linux_pkg_patterns:
       Debian: ["zabbix-agent", "zabbix-agent2"]
       RedHat: ["zabbix-agent", "zabbix-agent2"]
       Suse:   ["zabbix-agent", "zabbix-agent2"]
 
+    # Servicios típicos en Linux
     zbx_service_names: ["zabbix-agent", "zabbix-agent2"]
 
+    # Rutas de limpieza
     zbx_dirs_linux:
       - /etc/zabbix
       - /var/log/zabbix
       - /var/lib/zabbix
 
+    # Repositorios conocidos
     zbx_repo_files_apt:
       - /etc/apt/sources.list.d/zabbix.list
       - /etc/apt/sources.list.d/zabbix-official.list
@@ -28,6 +38,9 @@
       - /etc/zypp/repos.d/zabbix.repo
 
   tasks:
+    # -------------------------
+    # Detección / validación SO
+    # -------------------------
     - name: Detectar familia Linux
       set_fact:
         linux_family: "{{ ansible_facts.os_family }}"
@@ -39,7 +52,10 @@
           - linux_family is defined
         fail_msg: "Este playbook es solo para Linux (Debian/RedHat/Suse)."
         success_msg: "Host Linux compatible."
-    
+
+    # -------------------------
+    # Desinstalación
+    # -------------------------
     - name: Detener y deshabilitar servicios Zabbix (si existen)
       ansible.builtin.service:
         name: "{{ item }}"
@@ -110,7 +126,9 @@
         warn: false
       changed_when: false
 
+    # -------------------------
     # Verificación
+    # -------------------------
     - name: Verificar que no haya paquetes Zabbix instalados
       ansible.builtin.shell: |
         if command -v dpkg >/dev/null 2>&1; then dpkg -l | grep -iE '^ii\s+zabbix-agent' || true;
@@ -134,6 +152,6 @@
     - name: Fallar si se detectan restos (opcional)
       ansible.builtin.assert:
         that:
-          - not enforce_clean or linux_clean
+          - (not enforce_clean_bool) or linux_clean
         fail_msg: "Se detectaron restos de Zabbix tras la desinstalación."
         success_msg: "Desinstalación verificada correctamente."
