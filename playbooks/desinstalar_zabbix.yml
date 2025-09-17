@@ -64,11 +64,56 @@
         start_mode: disabled
       ignore_errors: yes
 
-    - name: Desinstalar característica SNMP
-      ansible.windows.win_feature:
-        name: SNMP
-        state: absent
-      ignore_errors: yes
+    - name: Detener servicio SNMP Trap
+      ansible.windows.win_service:
+        name: SNMPTRAP
+        state: stopped
+        start_mode: disabled
+      ignore_errors: yes 
+
+    - name: Desinstalar SNMP (soporta Windows Server y Windows 10/11)
+      ansible.windows.win_shell: |
+        $result = "NOT_PRESENT"
+
+        # 1) Windows 10/11 (capability)
+        $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
+        if ($cap -and $cap.State -eq "Installed") {
+          try {
+            Remove-WindowsCapability -Online -Name $cap.Name -ErrorAction Stop | Out-Null
+            $result = "REMOVED_CAP"
+          } catch {
+            Write-Output "ERROR_CAP: $($_.Exception.Message)"
+            $result = "ERROR_CAP"
+          }
+        } else {
+          # 2) Windows Server (feature)
+          $feat = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
+          if ($feat -and $feat.InstallState -eq "Installed") {
+            try {
+              Uninstall-WindowsFeature -Name SNMP-Service -IncludeAllSubFeature -ErrorAction Stop | Out-Null
+              $result = "REMOVED_FEAT"
+            } catch {
+              Write-Output "ERROR_FEAT: $($_.Exception.Message)"
+              $result = "ERROR_FEAT"
+            }
+          }
+        }
+
+        # Intentar también el proveedor WMI opcional
+        $featWMI = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
+        if ($featWMI -and $featWMI.InstallState -eq "Installed") {
+          try {
+            Uninstall-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction Stop | Out-Null
+            if ($result -eq "NOT_PRESENT") { $result = "REMOVED_FEAT" }
+          } catch {
+            Write-Output "ERROR_WMI: $($_.Exception.Message)"
+          }
+        }
+
+        Write-Output $result
+      register: snmp_uninstall
+      changed_when: snmp_uninstall.stdout is search("REMOVED_")
+      failed_when: false
 
     - name: Bloquear puerto SNMP (161/UDP) - método PowerShell (sin módulo)
       ansible.windows.win_shell: |
@@ -122,9 +167,19 @@
     # --- POST-CHECK / EVIDENCIA SNMP ---
     - name: Validar que no existan servicios/características SNMP
       ansible.windows.win_shell: |
-        $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-        $feature = Get-WindowsFeature -Name SNMP -ErrorAction SilentlyContinue
-        if ($svc -or ($feature -and $feature.InstallState -eq "Installed")) { "FOUND" } else { "NOT_FOUND" }
+        $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+        $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
+
+        $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
+        $capInstalled = $false
+        if ($cap -and $cap.State -eq "Installed") { $capInstalled = $true }
+
+        $feat  = Get-WindowsFeature -Name SNMP-Service       -ErrorAction SilentlyContinue
+        $featW = Get-WindowsFeature -Name SNMP-WMI-Provider  -ErrorAction SilentlyContinue
+        $featInstalled  = ($feat  -and $feat.InstallState  -eq "Installed")
+        $featWInstalled = ($featW -and $featW.InstallState -eq "Installed")
+
+        if ($svc1 -or $svc2 -or $capInstalled -or $featInstalled -or $featWInstalled) { "FOUND" } else { "NOT_FOUND" }
       register: snmp_check
       changed_when: false
       failed_when: false
