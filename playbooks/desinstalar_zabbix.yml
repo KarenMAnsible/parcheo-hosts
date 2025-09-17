@@ -1,6 +1,6 @@
 ---
 - name: Desinstalar Zabbix en Windows (con búsqueda y limpieza de carpetas)
-  hosts: windows
+  hosts: a_desinstalar_zabbix_windows
   gather_facts: false
 
   tasks:
