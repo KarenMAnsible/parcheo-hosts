@@ -56,7 +56,46 @@
       changed_when: "'SUCCESS' in (del_service.stdout | default(''))"
       failed_when: false
 
-    # --- POST-CHECK / EVIDENCIA ---
+    # --- BLOQUE SNMP ---
+    - name: Detener servicio SNMP
+      win_service:
+        name: SNMP
+        state: stopped
+        start_mode: disabled
+      ignore_errors: yes
+
+    - name: Desinstalar característica SNMP
+      win_feature:
+        name: SNMP
+        state: absent
+      ignore_errors: yes
+
+    - name: Bloquear puerto SNMP (161/UDP)
+      win_firewall_rule:
+        name: "Bloquear SNMP"
+        localport: 161
+        protocol: UDP
+        action: block
+        direction: in
+        state: present
+        enabled: yes
+
+    - name: Eliminar carpetas relacionadas con SNMP
+      win_file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "C:\\SNMP"
+        - "C:\\Program Files\\SNMP"
+        - "C:\\ProgramData\\SNMP"
+      ignore_errors: yes
+
+    - name: Forzar detención de procesos relacionados con SNMP
+      win_shell: |
+        Get-Process -Name *snmp* -ErrorAction SilentlyContinue | Stop-Process -Force
+      ignore_errors: yes
+
+    # --- POST-CHECK / EVIDENCIA ZABBIX ---
     - name: Validar que no existan paquetes 'Zabbix Agent'
       ansible.windows.win_shell: |
         $pkg = Get-Package | Where-Object { $_.Name -like "Zabbix Agent*" }
@@ -65,12 +104,32 @@
       changed_when: false
       failed_when: false
 
-    - name: Mostrar resultado final (sin restos)
+    - name: Mostrar resultado final Zabbix (sin restos)
       ansible.builtin.debug:
-        msg: "Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas residuales)."
+        msg: "Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas detectadas)."
       when: (zbx_pkg_check.stdout | trim) == "NOT_FOUND"
 
-    - name: Mostrar resultado final (con restos detectados)
+    - name: Mostrar resultado final Zabbix (con restos detectados)
       ansible.builtin.debug:
         msg: "Se detectaron restos de paquetes de Zabbix; revisar manualmente."
       when: (zbx_pkg_check.stdout | trim) != "NOT_FOUND"
+
+    # --- POST-CHECK / EVIDENCIA SNMP ---
+    - name: Validar que no existan servicios/características SNMP
+      ansible.windows.win_shell: |
+        $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+        $feature = Get-WindowsFeature -Name SNMP -ErrorAction SilentlyContinue
+        if ($svc -or ($feature -and $feature.InstallState -eq "Installed")) { "FOUND" } else { "NOT_FOUND" }
+      register: snmp_check
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado final SNMP (sin restos)
+      ansible.builtin.debug:
+        msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
+      when: (snmp_check.stdout | trim) == "NOT_FOUND"
+
+    - name: Mostrar resultado final SNMP (con restos detectados)
+      ansible.builtin.debug:
+        msg: "Se detectaron restos de SNMP; revisar manualmente."
+      when: (snmp_check.stdout | trim) != "NOT_FOUND"
