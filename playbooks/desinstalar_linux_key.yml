@@ -1,23 +1,37 @@
 ---
-- name: Desinstalar Zabbix en Linux (con soporte de llave SSH desde Encuesta)
+- name: Desinstalar Zabbix en Linux (con llave SSH desde Encuesta, FIX conexión)
   hosts: a_desinstalar_zabbix_linux
-  gather_facts: true
+  gather_facts: false          # <- evita conectar antes de crear la llave
   become: true
 
   vars:
-    # Variables desde la encuesta
+    # Variables que llegan desde la Encuesta de AAP (extra_vars)
+    usuario_ssh: "{{ usuario_ssh }}"
+    puerto_ssh: "{{ puerto_ssh | default(22) }}"
+    llave_ssh: "{{ llave_ssh }}"
+
+    # Ajustes de conexión
     ansible_user: "{{ usuario_ssh }}"
-    ansible_port: "{{ puerto_ssh | default(22) }}"
-    ansible_ssh_private_key_file: "/tmp/ansible_key_{{ inventory_hostname }}"
+    ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
   pre_tasks:
-    - name: Guardar llave SSH temporal para este host
+    - name: Crear archivo temporal con la llave privada en el controlador
       copy:
         content: "{{ llave_ssh }}"
         dest: "/tmp/ansible_key_{{ inventory_hostname }}"
         mode: '0600'
+      delegate_to: localhost
+      run_once: false
       no_log: true
+
+    - name: Anunciar a SSH dónde está la llave
+      set_fact:
+        ansible_ssh_private_key_file: "/tmp/ansible_key_{{ inventory_hostname }}"
+      no_log: true
+
+    - name: (Opcional) Recolectar facts ahora que ya existe la llave
+      setup:
 
   tasks:
     - name: Desinstalar Zabbix en Debian/Ubuntu
@@ -32,7 +46,7 @@
         state: absent
       when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Verificar que el servicio Zabbix ya no exista
+    - name: Verificar servicios
       service_facts:
 
     - name: Confirmar eliminación de servicio Zabbix
@@ -41,8 +55,10 @@
       when: "'zabbix-agent' in services"
 
   post_tasks:
-    - name: Borrar llave temporal
+    - name: Borrar la llave temporal del controlador
       file:
         path: "/tmp/ansible_key_{{ inventory_hostname }}"
         state: absent
+      delegate_to: localhost
+      run_once: false
       no_log: true
