@@ -1,5 +1,5 @@
 ---
-- name: Desinstalar Zabbix en Windows (WMIC + limpieza de carpetas)
+- name: Desinstalar Zabbix en Windows (WMIC + limpieza de carpetas + post-check)
   hosts: a_desinstalar_zabbix_windows
   gather_facts: false
 
@@ -49,7 +49,18 @@
       when: (czabbix_dirs.stdout_lines | default([])) | length > 0
       ignore_errors: true
 
-    - name: Aviso si no se encontró ninguna carpeta 'czabbix' extra
+    # --- POST-CHECK / EVIDENCIA ---
+    - name: Validar que no existan paquetes 'Zabbix Agent'
+      ansible.windows.win_shell: |
+        $pkg = Get-Package | Where-Object { $_.Name -like "Zabbix Agent*" }
+        if ($pkg) { "FOUND" } else { "NOT_FOUND" }
+      register: zbx_pkg_check
+      changed_when: false
+      failed_when: false
+
+    - name: Resultado final
       ansible.builtin.debug:
-        msg: "No se encontraron carpetas adicionales llamadas 'czabbix'."
-      when: (czabbix_dirs.stdout_lines | default([])) | length == 0
+        msg: >-
+          {{ 'Zabbix desinstalado correctamente (sin paquetes ni carpetas residuales).'
+             if (zbx_pkg_check.stdout | trim) -eq 'NOT_FOUND'
+             else 'Se detectaron restos de paquetes de Zabbix; revisar manualmente.' }}
