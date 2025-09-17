@@ -1,60 +1,19 @@
 ---
-- name: Desinstalar Zabbix (Windows y Linux) con verificación
-  hosts: a_desinstalar_zabbix
-  gather_facts: true
-  become: true
+- name: Desinstalar Zabbix en Windows (con búsqueda y limpieza de carpetas)
+  hosts: windows
+  gather_facts: false
 
   vars:
-    # Si queda algún rastro y quieres que el job falle, déjalo en true
-    enforce_clean: true
-
-    # Paquetes por familia Linux
-    zbx_linux_pkg_patterns:
-      Debian: ["zabbix-agent", "zabbix-agent2"]
-      RedHat: ["zabbix-agent", "zabbix-agent2"]
-      Suse:   ["zabbix-agent", "zabbix-agent2"]
-
-    # Servicios típicos en Linux
-    zbx_service_names: ["zabbix-agent", "zabbix-agent2"]
-
-    # Rutas de limpieza
-    zbx_dirs_linux:
-      - /etc/zabbix
-      - /var/log/zabbix
-      - /var/lib/zabbix
-    zbx_dirs_windows:
-      - 'C:\Program Files\Zabbix Agent'
-      - 'C:\Program Files\Zabbix Agent 2'
-      - 'C:\zabbix'
-
-    # Repos conocidos
-    zbx_repo_files_apt:
-      - /etc/apt/sources.list.d/zabbix.list
-      - /etc/apt/sources.list.d/zabbix-official.list
-    zbx_repo_files_yum:
-      - /etc/yum.repos.d/zabbix.repo
-    zbx_repo_files_zypper:
-      - /etc/zypp/repos.d/zabbix.repo
+    # Raíces donde buscar para evitar un recurse de todo el disco con excesivo costo
+    search_roots:
+      - "C:\\"
+      - "$env:ProgramFiles"
+      - "$env:ProgramFiles(x86)"
+      - "$env:ProgramData"
+      - "$env:SystemDrive\\Users"
 
   tasks:
-    # =========================
-    # DETECCIÓN DE SO
-    # =========================
-    - name: Detectar si es Windows
-    # En Windows, os_family varía; usamos system para asegurarlo
-      set_fact:
-        is_windows: true
-      when: ansible_facts.system | lower == "windows"
-
-    - name: Detectar familia Linux (Debian/RedHat/Suse)
-      set_fact:
-        linux_family: "{{ ansible_facts.os_family }}"
-      when: ansible_facts.os_family in ["Debian", "RedHat", "Suse"]
-
-    # =========================
-    # WINDOWS
-    # =========================
-    - name: WINDOWS | Detener servicio Zabbix Agent si existe
+    - name: Detener servicios Zabbix si existen
       ansible.windows.win_service:
         name: "{{ item }}"
         state: stopped
@@ -62,159 +21,54 @@
         - "Zabbix Agent"
         - "Zabbix Agent 2"
       ignore_errors: true
-      when: is_windows | default(false)
 
-    - name: WINDOWS | Desinstalar "Zabbix Agent" si está instalado
+    - name: Desinstalar 'Zabbix Agent' (si está instalado)
       ansible.windows.win_package:
-        name: Zabbix Agent
+        name: "Zabbix Agent"
         state: absent
       ignore_errors: true
-      when: is_windows | default(false)
 
-    - name: WINDOWS | Desinstalar "Zabbix Agent 2" si está instalado
+    - name: Desinstalar 'Zabbix Agent 2' (si está instalado)
       ansible.windows.win_package:
-        name: Zabbix Agent 2
+        name: "Zabbix Agent 2"
         state: absent
       ignore_errors: true
-      when: is_windows | default(false)
 
-    - name: WINDOWS | Borrar carpetas residuales
+    # Limpieza directa por si quedó una ruta conocida
+    - name: Eliminar carpeta C:\czabbix si existe
+      ansible.windows.win_file:
+        path: "C:\\czabbix"
+        state: absent
+      ignore_errors: true
+
+    # Búsqueda de carpetas llamadas "czabbix" (fallback)
+    - name: Buscar carpetas llamadas 'czabbix' en rutas comunes (PowerShell)
+      ansible.windows.win_shell: |
+        $roots = @( {{ search_roots | map('regex_replace', '^', '"') | map('regex_replace', '$', '"') | join(', ') }} )
+        $results = @()
+        foreach ($r in $roots) {
+          try {
+            if ($r -match '^\$') { $r = Invoke-Expression $r }
+            if (-not [string]::IsNullOrWhiteSpace($r) -and (Test-Path $r)) {
+              Get-ChildItem -Path $r -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName | ForEach-Object { $results += $_ }
+            }
+          } catch { }
+        }
+        $results | Sort-Object -Unique
+      register: czabbix_dirs
+      changed_when: false
+      failed_when: false
+
+    - name: Eliminar todas las carpetas 'czabbix' encontradas
       ansible.windows.win_file:
         path: "{{ item }}"
         state: absent
-      loop: "{{ zbx_dirs_windows }}"
-      ignore_errors: true
-      when: is_windows | default(false)
-
-    # =========================
-    # LINUX
-    # =========================
-    - name: LINUX | Detener y deshabilitar servicios Zabbix (si existen)
-      ansible.builtin.service:
-        name: "{{ item }}"
-        state: stopped
-        enabled: no
-      loop: "{{ zbx_service_names }}"
-      ignore_errors: true
-      when: linux_family is defined
-
-    - name: LINUX | Desinstalar paquetes Zabbix (Debian/Ubuntu)
-      ansible.builtin.apt:
-        name: "{{ zbx_linux_pkg_patterns['Debian'] }}"
-        state: absent
-        purge: yes
-        update_cache: yes
-      when: linux_family == "Debian"
-
-    - name: LINUX | Desinstalar paquetes Zabbix (RHEL/CentOS/Alma/Rocky)
-      ansible.builtin.dnf:
-        name: "{{ zbx_linux_pkg_patterns['RedHat'] }}"
-        state: absent
-      when: linux_family == "RedHat"
-
-    - name: LINUX | Desinstalar paquetes Zabbix (SUSE)
-      community.general.zypper:
-        name: "{{ zbx_linux_pkg_patterns['Suse'] }}"
-        state: absent
-      when: linux_family == "Suse"
-
-    - name: LINUX | Eliminar archivos de configuración y datos
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop: "{{ zbx_dirs_linux }}"
-      ignore_errors: true
-      when: linux_family is defined
-
-    - name: LINUX | Remover repos de Zabbix (APT)
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop: "{{ zbx_repo_files_apt }}"
-      when: linux_family == "Debian"
+      loop: "{{ (czabbix_dirs.stdout_lines | default([])) | unique }}"
+      when: (czabbix_dirs.stdout_lines | default([])) | length > 0
       ignore_errors: true
 
-    - name: LINUX | Remover repos de Zabbix (YUM/DNF)
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop: "{{ zbx_repo_files_yum }}"
-      when: linux_family == "RedHat"
-      ignore_errors: true
-
-    - name: LINUX | Remover repos de Zabbix (ZYPPER)
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop: "{{ zbx_repo_files_zypper }}"
-      when: linux_family == "Suse"
-      ignore_errors: true
-
-    - name: LINUX | Limpiar caché de paquetes
-      ansible.builtin.shell: |
-        if command -v apt-get >/dev/null 2>&1; then apt-get clean;
-        elif command -v dnf >/dev/null 2>&1; then dnf clean all;
-        elif command -v yum >/dev/null 2>&1; then yum clean all;
-        elif command -v zypper >/dev/null 2>&1; then zypper clean -a;
-        fi
-      args:
-        warn: false
-      changed_when: false
-      when: linux_family is defined
-
-    # =========================
-    # VERIFICACIÓN FINAL
-    # =========================
-    - name: LINUX | Verificar que no haya paquetes Zabbix instalados
-      ansible.builtin.shell: |
-        if command -v dpkg >/dev/null 2>&1; then dpkg -l | grep -iE '^ii\s+zabbix-agent' || true;
-        elif command -v rpm >/dev/null 2>&1; then rpm -qa | grep -iE '^zabbix-agent' || true;
-        fi
-      register: zbx_check_linux
-      changed_when: false
-      when: linux_family is defined
-
-    - name: WINDOWS | Obtener lista de paquetes instalados
-      ansible.windows.win_package_facts:
-      register: win_pkgs
-      when: is_windows | default(false)
-
-    - name: WINDOWS | Construir lista de restos (Zabbix Agent/Agent 2)
-      set_fact:
-        win_zbx_remnants: >-
-          {{ (win_pkgs.installed_packages | default([]))
-              | selectattr('name','search','(?i)Zabbix Agent( 2)?')
-              | list }}
-      when: is_windows | default(false)
-
-    - name: LINUX | Marcar estado de limpieza
-      set_fact:
-        linux_clean: "{{ (zbx_check_linux.stdout | default('') | trim) == '' }}"
-      when: linux_family is defined
-
-    - name: WINDOWS | Marcar estado de limpieza
-      set_fact:
-        windows_clean: "{{ (win_zbx_remnants | default([])) | length == 0 }}"
-      when: is_windows | default(false)
-
-    - name: Determinar estado global de limpieza por host
-      set_fact:
-        zabbix_clean: >-
-          {{ (linux_family is defined and (linux_clean | default(false))) or
-             (is_windows | default(false) and (windows_clean | default(false))) }}
-
-    - name: Resumen de verificación
+    - name: Aviso si no se encontró ninguna carpeta 'czabbix' extra
       ansible.builtin.debug:
-        msg: |
-          >>> VERIFICACIÓN DE DESINSTALACIÓN <<<
-          SO: {{ ansible_facts.system }} / {{ ansible_facts.os_family | default('N/A') }}
-          Linux paquetes remanentes: "{{ zbx_check_linux.stdout | default('N/A') | trim }}"
-          Windows paquetes remanentes: {{ (win_zbx_remnants | default([])) | map(attribute='name') | list }}
-          Estado final: {{ 'LIMPIO ✅' if zabbix_clean else 'PENDIENTE ❌' }}
-
-    - name: Fallar si se detectan restos (opcional)
-      ansible.builtin.assert:
-        that:
-          - not enforce_clean or zabbix_clean
-        fail_msg: "Se detectaron restos de Zabbix tras la desinstalación."
-        success_msg: "Desinstalación verificada correctamente."
+        msg: "No se encontraron carpetas adicionales llamadas 'czabbix' fuera de C:\\czabbix."
+      when: (czabbix_dirs.stdout_lines | default([])) | length == 0
