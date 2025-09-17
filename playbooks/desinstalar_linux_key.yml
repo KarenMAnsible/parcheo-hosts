@@ -1,17 +1,13 @@
 ---
-- name: Validación y desinstalación de Zabbix (con llave SSH desde Encuesta)
-  hosts: linux
+- name: Desinstalar Zabbix en Linux (con soporte de llave SSH desde Encuesta)
+  hosts: a_desinstalar_zabbix_linux
   gather_facts: true
   become: true
 
   vars:
-    # Variables desde la Encuesta
-    usuario_ssh: "{{ usuario_ssh }}"
-    llave_ssh: "{{ llave_ssh }}"
-    puerto_ssh: "{{ puerto_ssh | default(22) }}"
-
+    # Variables desde la encuesta
     ansible_user: "{{ usuario_ssh }}"
-    ansible_port: "{{ puerto_ssh }}"
+    ansible_port: "{{ puerto_ssh | default(22) }}"
     ansible_ssh_private_key_file: "/tmp/ansible_key_{{ inventory_hostname }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
@@ -24,23 +20,13 @@
       no_log: true
 
   tasks:
-    - name: Verificar uptime
-      command: uptime
-
-    - name: Mostrar información del sistema
-      setup:
-        gather_subset:
-          - hardware
-          - network
-          - virtual
-
-    - name: Desinstalar Zabbix (Debian/Ubuntu)
+    - name: Desinstalar Zabbix en Debian/Ubuntu
       apt:
         name: zabbix-agent
         state: absent
       when: ansible_facts['os_family'] == "Debian"
 
-    - name: Desinstalar Zabbix (RedHat/CentOS)
+    - name: Desinstalar Zabbix en RedHat/CentOS
       yum:
         name: zabbix-agent
         state: absent
