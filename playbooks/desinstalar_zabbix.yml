@@ -1,5 +1,5 @@
 ---
-- name: Desinstalar Zabbix en Windows (con búsqueda y limpieza de carpetas)
+- name: Desinstalar Zabbix en Windows (WMIC + limpieza de carpetas)
   hosts: a_desinstalar_zabbix_windows
   gather_facts: false
 
@@ -13,17 +13,19 @@
         - "Zabbix Agent 2"
       ignore_errors: true
 
-    - name: Desinstalar 'Zabbix Agent'
-      ansible.windows.win_package:
-        name: "Zabbix Agent"
-        state: absent
-      ignore_errors: true
+    - name: Desinstalar Zabbix Agent con WMIC (si está)
+      ansible.windows.win_shell: |
+        wmic product where "name='Zabbix Agent'" call uninstall /nointeractive | Out-Null
+        $LASTEXITCODE = 0
+      changed_when: false
+      failed_when: false
 
-    - name: Desinstalar 'Zabbix Agent 2'
-      ansible.windows.win_package:
-        name: "Zabbix Agent 2"
-        state: absent
-      ignore_errors: true
+    - name: Desinstalar Zabbix Agent 2 con WMIC (si está)
+      ansible.windows.win_shell: |
+        wmic product where "name='Zabbix Agent 2'" call uninstall /nointeractive | Out-Null
+        $LASTEXITCODE = 0
+      changed_when: false
+      failed_when: false
 
     - name: Eliminar carpeta C:\czabbix si existe
       ansible.windows.win_file:
@@ -31,7 +33,7 @@
         state: absent
       ignore_errors: true
 
-    - name: "Buscar carpeta 'czabbix' en todo C:"   # <- ¡citado!
+    - name: "Buscar carpeta 'czabbix' en todo C"
       ansible.windows.win_shell: |
         Get-ChildItem -Path C:\ -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty FullName
