@@ -70,15 +70,20 @@
         state: absent
       ignore_errors: yes
 
-    - name: Bloquear puerto SNMP (161/UDP)
-      win_firewall_rule:
-        name: "Bloquear SNMP"
-        localport: 161
-        protocol: UDP
-        action: block
-        direction: in
-        state: present
-        enabled: yes
+    - name: Bloquear puerto SNMP (161/UDP) - método PowerShell (sin módulo)
+  ansible.windows.win_shell: |
+    $ruleName = "Bloquear SNMP 161 UDP"
+    $rule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+    if (-not $rule) {
+      New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -LocalPort 161 -Protocol UDP -Action Block | Out-Null
+      "CREATED"
+    } else {
+      "EXISTS"
+    }
+  register: snmp_fw
+  changed_when: (snmp_fw.stdout | trim) -eq "CREATED"
+  failed_when: false
+
 
     - name: Eliminar carpetas relacionadas con SNMP
       win_file:
