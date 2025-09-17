@@ -25,15 +25,13 @@
         state: absent
       ignore_errors: true
 
-    # Eliminación directa por ruta conocida
     - name: Eliminar carpeta C:\czabbix si existe
       ansible.windows.win_file:
         path: "C:\\czabbix"
         state: absent
       ignore_errors: true
 
-    # Búsqueda simple en C:\ para evitar problemas de comillas/Jinja
-    - name: Buscar carpeta 'czabbix' en todo C:
+    - name: "Buscar carpeta 'czabbix' en todo C:"   # <- ¡citado!
       ansible.windows.win_shell: |
         Get-ChildItem -Path C:\ -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty FullName
