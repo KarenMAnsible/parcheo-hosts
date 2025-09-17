@@ -3,15 +3,6 @@
   hosts: windows
   gather_facts: false
 
-  vars:
-    # Raíces donde buscar para evitar un recurse de todo el disco con excesivo costo
-    search_roots:
-      - "C:\\"
-      - "$env:ProgramFiles"
-      - "$env:ProgramFiles(x86)"
-      - "$env:ProgramData"
-      - "$env:SystemDrive\\Users"
-
   tasks:
     - name: Detener servicios Zabbix si existen
       ansible.windows.win_service:
@@ -22,29 +13,29 @@
         - "Zabbix Agent 2"
       ignore_errors: true
 
-    - name: Desinstalar 'Zabbix Agent' (si está instalado)
+    - name: Desinstalar 'Zabbix Agent'
       ansible.windows.win_package:
         name: "Zabbix Agent"
         state: absent
       ignore_errors: true
 
-    - name: Desinstalar 'Zabbix Agent 2' (si está instalado)
+    - name: Desinstalar 'Zabbix Agent 2'
       ansible.windows.win_package:
         name: "Zabbix Agent 2"
         state: absent
       ignore_errors: true
 
-    # Limpieza directa por si quedó una ruta conocida
+    # Eliminación directa
     - name: Eliminar carpeta C:\czabbix si existe
       ansible.windows.win_file:
         path: "C:\\czabbix"
         state: absent
       ignore_errors: true
 
-    # Búsqueda de carpetas llamadas "czabbix" (fallback)
-    - name: Buscar carpetas llamadas 'czabbix' en rutas comunes (PowerShell)
+    # Búsqueda en otras rutas si no estaba en C:
+    - name: Buscar carpeta czabbix en rutas comunes
       ansible.windows.win_shell: |
-        $roots = @( {{ search_roots | map('regex_replace', '^', '"') | map('regex_replace', '$', '"') | join(', ') }} )
+        $roots = @("C:\", "$env:ProgramFiles", "$env:ProgramFiles(x86)", "$env:ProgramData", "$env:SystemDrive\Users")
         $results = @()
         foreach ($r in $roots) {
           try {
@@ -60,7 +51,7 @@
       changed_when: false
       failed_when: false
 
-    - name: Eliminar todas las carpetas 'czabbix' encontradas
+    - name: Eliminar carpetas czabbix encontradas
       ansible.windows.win_file:
         path: "{{ item }}"
         state: absent
@@ -68,7 +59,7 @@
       when: (czabbix_dirs.stdout_lines | default([])) | length > 0
       ignore_errors: true
 
-    - name: Aviso si no se encontró ninguna carpeta 'czabbix' extra
+    - name: Aviso si no se encontró ninguna carpeta czabbix extra
       ansible.builtin.debug:
-        msg: "No se encontraron carpetas adicionales llamadas 'czabbix' fuera de C:\\czabbix."
+        msg: "No se encontraron carpetas adicionales llamadas 'czabbix'."
       when: (czabbix_dirs.stdout_lines | default([])) | length == 0
