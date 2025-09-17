@@ -56,37 +56,36 @@
       changed_when: "'SUCCESS' in (del_service.stdout | default(''))"
       failed_when: false
 
-    # --- BLOQUE SNMP ---
+        # --- BLOQUE SNMP ---
     - name: Detener servicio SNMP
-      win_service:
+      ansible.windows.win_service:
         name: SNMP
         state: stopped
         start_mode: disabled
       ignore_errors: yes
 
     - name: Desinstalar característica SNMP
-      win_feature:
+      ansible.windows.win_feature:
         name: SNMP
         state: absent
       ignore_errors: yes
 
     - name: Bloquear puerto SNMP (161/UDP) - método PowerShell (sin módulo)
-  ansible.windows.win_shell: |
-    $ruleName = "Bloquear SNMP 161 UDP"
-    $rule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
-    if (-not $rule) {
-      New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -LocalPort 161 -Protocol UDP -Action Block | Out-Null
-      "CREATED"
-    } else {
-      "EXISTS"
-    }
-  register: snmp_fw
-  changed_when: (snmp_fw.stdout | trim) -eq "CREATED"
-  failed_when: false
-
+      ansible.windows.win_shell: |
+        $ruleName = "Bloquear SNMP 161 UDP"
+        $rule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+        if (-not $rule) {
+          New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -LocalPort 161 -Protocol UDP -Action Block | Out-Null
+          "CREATED"
+        } else {
+          "EXISTS"
+        }
+      register: snmp_fw
+      changed_when: (snmp_fw.stdout | trim) == "CREATED"
+      failed_when: false
 
     - name: Eliminar carpetas relacionadas con SNMP
-      win_file:
+      ansible.windows.win_file:
         path: "{{ item }}"
         state: absent
       loop:
@@ -94,6 +93,7 @@
         - "C:\\Program Files\\SNMP"
         - "C:\\ProgramData\\SNMP"
       ignore_errors: yes
+
 
     - name: Forzar detención de procesos relacionados con SNMP
       win_shell: |
