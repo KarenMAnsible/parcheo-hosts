@@ -53,7 +53,7 @@
       ansible.windows.win_shell: |
         sc.exe delete "Zabbix Agent"
       register: del_service
-      changed_when: "'SUCCESS' in del_service.stdout"
+      changed_when: "'SUCCESS' in (del_service.stdout | default(''))"
       failed_when: false
 
     # --- POST-CHECK / EVIDENCIA ---
@@ -65,9 +65,12 @@
       changed_when: false
       failed_when: false
 
-    - name: Resultado final
+    - name: Mostrar resultado final (sin restos)
       ansible.builtin.debug:
-        msg: >-
-          {{ 'Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas residuales).'
-             if (zbx_pkg_check.stdout | trim) -eq 'NOT_FOUND'
-             else 'Se detectaron restos de paquetes de Zabbix; revisar manualmente.' }}
+        msg: "Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas residuales)."
+      when: (zbx_pkg_check.stdout | trim) == "NOT_FOUND"
+
+    - name: Mostrar resultado final (con restos detectados)
+      ansible.builtin.debug:
+        msg: "Se detectaron restos de paquetes de Zabbix; revisar manualmente."
+      when: (zbx_pkg_check.stdout | trim) != "NOT_FOUND"
