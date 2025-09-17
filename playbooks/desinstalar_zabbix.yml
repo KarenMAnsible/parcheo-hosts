@@ -25,33 +25,23 @@
         state: absent
       ignore_errors: true
 
-    # Eliminación directa
+    # Eliminación directa por ruta conocida
     - name: Eliminar carpeta C:\czabbix si existe
       ansible.windows.win_file:
         path: "C:\\czabbix"
         state: absent
       ignore_errors: true
 
-    # Búsqueda en otras rutas si no estaba en C:
-    - name: Buscar carpeta czabbix en rutas comunes
+    # Búsqueda simple en C:\ para evitar problemas de comillas/Jinja
+    - name: Buscar carpeta 'czabbix' en todo C:
       ansible.windows.win_shell: |
-        $roots = @("C:\", "$env:ProgramFiles", "$env:ProgramFiles(x86)", "$env:ProgramData", "$env:SystemDrive\Users")
-        $results = @()
-        foreach ($r in $roots) {
-          try {
-            if ($r -match '^\$') { $r = Invoke-Expression $r }
-            if (-not [string]::IsNullOrWhiteSpace($r) -and (Test-Path $r)) {
-              Get-ChildItem -Path $r -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
-                Select-Object -ExpandProperty FullName | ForEach-Object { $results += $_ }
-            }
-          } catch { }
-        }
-        $results | Sort-Object -Unique
+        Get-ChildItem -Path C:\ -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty FullName
       register: czabbix_dirs
       changed_when: false
       failed_when: false
 
-    - name: Eliminar carpetas czabbix encontradas
+    - name: Eliminar carpetas 'czabbix' encontradas
       ansible.windows.win_file:
         path: "{{ item }}"
         state: absent
@@ -59,7 +49,7 @@
       when: (czabbix_dirs.stdout_lines | default([])) | length > 0
       ignore_errors: true
 
-    - name: Aviso si no se encontró ninguna carpeta czabbix extra
+    - name: Aviso si no se encontró ninguna carpeta 'czabbix' extra
       ansible.builtin.debug:
         msg: "No se encontraron carpetas adicionales llamadas 'czabbix'."
       when: (czabbix_dirs.stdout_lines | default([])) | length == 0
