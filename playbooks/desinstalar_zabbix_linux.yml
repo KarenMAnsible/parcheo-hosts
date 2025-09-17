@@ -25,13 +25,27 @@
         - zabbix-agent2
       ignore_errors: true
 
-    - name: Desinstalar paquetes Zabbix con gestor nativo
+    # Para distros que NO sean SUSE usamos 'package' genérico
+    - name: Desinstalar paquetes Zabbix (no-SUSE)
       ansible.builtin.package:
         name: "{{ zabbix_pkg_candidates }}"
         state: absent
+      when: ansible_facts.os_family != "Suse"
       ignore_errors: true
 
-    # Limpieza directa de rutas más comunes
+    # Para SUSE usamos zypper directo (evita depender de colecciones)
+    - name: Desinstalar Zabbix en SUSE con zypper
+      ansible.builtin.command: >
+        zypper --non-interactive remove -y zabbix-agent zabbix-agent2
+      when: ansible_facts.os_family == "Suse"
+      register: zypper_remove
+      changed_when: >
+        (zypper_remove.rc == 0) and
+        ("Nothing to do" not in (zypper_remove.stdout | default(""))) and
+        ("not found" not in (zypper_remove.stdout | default("")) | lower)
+      failed_when: false
+
+    # Limpiezas directas de rutas típicas
     - name: Eliminar carpeta config /etc/zabbix si existe
       ansible.builtin.file:
         path: /etc/zabbix
@@ -50,7 +64,7 @@
         state: absent
       ignore_errors: true
 
-    # Búsqueda de carpetas "zabbix" en rutas comunes (fallback)
+    # Búsqueda de carpetas 'zabbix' en rutas comunes (fallback)
     - name: Buscar carpetas llamadas 'zabbix' en rutas comunes
       ansible.builtin.find:
         paths: "{{ item }}"
