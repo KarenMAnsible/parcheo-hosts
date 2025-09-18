@@ -2,61 +2,58 @@
 - name: Desinstalar Zabbix en Windows (limpieza completa + post-check)
   hosts: a_desinstalar_zabbix_windows
   gather_facts: false
-
   tasks:
+
+    # --- BLOQUE ZABBIX ---
     - name: Detener servicios Zabbix si existen
       ansible.windows.win_service:
         name: "{{ item }}"
         state: stopped
+        start_mode: disabled
       loop:
         - "Zabbix Agent"
         - "Zabbix Agent 2"
-      ignore_errors: true
+      ignore_errors: yes
 
     - name: Desinstalar Zabbix Agent con WMIC (si está)
-      ansible.windows.win_shell: |
-        wmic product where "name='Zabbix Agent'" call uninstall /nointeractive | Out-Null
-        $LASTEXITCODE = 0
-      changed_when: false
+      ansible.windows.win_shell: wmic product where "name like 'Zabbix Agent%'" call uninstall /nointeractive
+      register: zbx_uninstall1
+      changed_when: "'ReturnValue = 0' in zbx_uninstall1.stdout"
       failed_when: false
 
     - name: Desinstalar Zabbix Agent 2 con WMIC (si está)
-      ansible.windows.win_shell: |
-        wmic product where "name='Zabbix Agent 2'" call uninstall /nointeractive | Out-Null
-        $LASTEXITCODE = 0
-      changed_when: false
+      ansible.windows.win_shell: wmic product where "name='Zabbix Agent 2'" call uninstall /nointeractive
+      register: zbx_uninstall2
+      changed_when: "'ReturnValue = 0' in zbx_uninstall2.stdout"
       failed_when: false
 
     - name: Eliminar carpeta C:\czabbix si existe
       ansible.windows.win_file:
-        path: "C:\\czabbix"
+        path: C:\czabbix
         state: absent
-      ignore_errors: true
+      ignore_errors: yes
 
-    - name: "Buscar carpeta 'czabbix' en todo C"
-      ansible.windows.win_shell: |
-        Get-ChildItem -Path C:\ -Directory -Filter "czabbix" -Recurse -ErrorAction SilentlyContinue |
-        Select-Object -ExpandProperty FullName
-      register: czabbix_dirs
-      changed_when: false
-      failed_when: false
+    - name: Buscar carpeta 'czabbix' en todo C
+      ansible.windows.win_find:
+        paths: C:\
+        patterns: '*zabbix*'
+        recurse: yes
+      register: found_zabbix
 
     - name: Eliminar carpetas 'czabbix' encontradas
       ansible.windows.win_file:
-        path: "{{ item }}"
+        path: "{{ item.path }}"
         state: absent
-      loop: "{{ (czabbix_dirs.stdout_lines | default([])) | unique }}"
-      when: (czabbix_dirs.stdout_lines | default([])) | length > 0
-      ignore_errors: true
+      loop: "{{ found_zabbix.files }}"
+      ignore_errors: yes
 
     - name: Eliminar servicio Zabbix Agent si quedó registrado
-      ansible.windows.win_shell: |
-        sc.exe delete "Zabbix Agent"
-      register: del_service
-      changed_when: "'SUCCESS' in (del_service.stdout | default(''))"
+      ansible.windows.win_shell: sc.exe delete "Zabbix Agent"
+      register: sc_delete
       failed_when: false
+      changed_when: "'[SC] DeleteService SUCCESS' in sc_delete.stdout"
 
-        # --- BLOQUE SNMP ---
+    # --- BLOQUE SNMP ---
     - name: Detener servicio SNMP
       ansible.windows.win_service:
         name: SNMP
@@ -69,122 +66,26 @@
         name: SNMPTRAP
         state: stopped
         start_mode: disabled
-      ignore_errors: yes 
+      ignore_errors: yes
 
     - name: Desinstalar SNMP (soporta Windows Server y Windows 10/11)
       ansible.windows.win_shell: |
         $result = "NOT_PRESENT"
-
-        # 1) Windows 10/11 (capability)
         $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
         if ($cap -and $cap.State -eq "Installed") {
-          try {
-            Remove-WindowsCapability -Online -Name $cap.Name -ErrorAction Stop | Out-Null
-            $result = "REMOVED_CAP"
-          } catch {
-            Write-Output "ERROR_CAP: $($_.Exception.Message)"
-            $result = "ERROR_CAP"
-          }
+          Remove-WindowsCapability -Online -Name $cap.Name -ErrorAction SilentlyContinue | Out-Null
+          $result = "REMOVED_CAP"
         } else {
-          # 2) Windows Server (feature)
           $feat = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
           if ($feat -and $feat.InstallState -eq "Installed") {
-            try {
-              Uninstall-WindowsFeature -Name SNMP-Service -IncludeAllSubFeature -ErrorAction Stop | Out-Null
-              $result = "REMOVED_FEAT"
-            } catch {
-              Write-Output "ERROR_FEAT: $($_.Exception.Message)"
-              $result = "ERROR_FEAT"
-            }
+            Uninstall-WindowsFeature -Name SNMP-Service -IncludeAllSubFeature -ErrorAction SilentlyContinue | Out-Null
+            $result = "REMOVED_FEAT"
           }
         }
-
-        # Intentar también el proveedor WMI opcional
-        $featWMI = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
-        if ($featWMI -and $featWMI.InstallState -eq "Installed") {
-          try {
-            Uninstall-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction Stop | Out-Null
-            if ($result -eq "NOT_PRESENT") { $result = "REMOVED_FEAT" }
-          } catch {
-            Write-Output "ERROR_WMI: $($_.Exception.Message)"
-          }
-        }
-
         Write-Output $result
       register: snmp_uninstall
       changed_when: snmp_uninstall.stdout is search("REMOVED_")
       failed_when: false
-     
-     # Borrar servicios si ya no existe feature/capability
-    - name: Eliminar servicios SNMP/SNMPTRAP si ya no hay feature/capability
-      ansible.windows.win_shell: |
-        $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
-        $capInstalled = ($cap -and $cap.State -eq "Installed")
-
-        $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
-        $featInstalled = ($feat -and $feat.InstallState -eq "Installed")
-
-        $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
-        $featWInstalled = ($featW -and $featW.InstallState -eq "Installed")
-
-        if (-not $capInstalled -and -not $featInstalled -and -not $featWInstalled) {
-          $out = @()
-          $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-          if ($svc) { sc.exe delete SNMP | Out-Null; $out += "DELETED:SNMP" } else { $out += "NOEXIST:SNMP" }
-          $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
-          if ($svc2) { sc.exe delete SNMPTRAP | Out-Null; $out += "DELETED:SNMPTRAP" } else { $out += "NOEXIST:SNMPTRAP" }
-          $out -join ";"
-        } else {
-          "SKIP_DELETE:FEATURE_OR_CAP_PRESENT"
-        }
-      register: snmp_del_services
-      changed_when: snmp_del_services.stdout is search("DELETED:")
-      failed_when: false
-
-
-   # Verificación detallada de qué quedó
-- name: Validar que no existan servicios/características SNMP (detalle)
-  ansible.windows.win_shell: |
-    $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-    $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
-    $svcPresent = @()
-    if ($svc1) { $svcPresent += "SNMP" }
-    if ($svc2) { $svcPresent += "SNMPTRAP" }
-
-    $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
-    $capState = if ($cap) { $cap.State } else { "NotPresent" }
-
-    $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
-    $featState  = if ($feat) { $feat.InstallState } else { "NotPresent" }
-    $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
-    $featWState = if ($featW) { $featW.InstallState } else { "NotPresent" }
-
-    $found = ($svcPresent.Count -gt 0) -or ($capState -eq "Installed") -or ($featState -eq "Installed") -or ($featWState -eq "Installed")
-    [PSCustomObject]@{
-      services_present = ($svcPresent -join ",")
-      cap_state = $capState
-      feat_state = $featState
-      featW_state = $featWState
-      result = if ($found) { "FOUND" } else { "NOT_FOUND" }
-    } | ConvertTo-Json -Compress
-  register: snmp_check_detail
-  changed_when: false
-  failed_when: false
-
-- name: Mostrar detalle de verificación SNMP
-  ansible.builtin.debug:
-    var: snmp_check_detail.stdout
-
-- name: Mostrar resultado final SNMP (sin restos)
-  ansible.builtin.debug:
-    msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
-  when: snmp_check_detail.stdout is search('"result":"NOT_FOUND"')
-
-- name: Mostrar resultado final SNMP (con restos detectados)
-  ansible.builtin.debug:
-    msg: "Se detectaron restos de SNMP; revisar manualmente."
-  when: snmp_check_detail.stdout is search('"result":"FOUND"')
-     
 
     - name: Bloquear puerto SNMP (161/UDP) - método PowerShell (sin módulo)
       ansible.windows.win_shell: |
@@ -210,57 +111,35 @@
         - "C:\\ProgramData\\SNMP"
       ignore_errors: yes
 
-
     - name: Forzar detención de procesos relacionados con SNMP
-      win_shell: |
+      ansible.windows.win_shell: |
         Get-Process -Name *snmp* -ErrorAction SilentlyContinue | Stop-Process -Force
       ignore_errors: yes
 
-    # --- POST-CHECK / EVIDENCIA ZABBIX ---
-    - name: Validar que no existan paquetes 'Zabbix Agent'
+    - name: Eliminar servicios SNMP/SNMPTRAP si ya no hay feature/capability
       ansible.windows.win_shell: |
-        $pkg = Get-Package | Where-Object { $_.Name -like "Zabbix Agent*" }
-        if ($pkg) { "FOUND" } else { "NOT_FOUND" }
-      register: zbx_pkg_check
-      changed_when: false
-      failed_when: false
-
-    - name: Mostrar resultado final Zabbix (sin restos)
-      ansible.builtin.debug:
-        msg: "Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas detectadas)."
-      when: (zbx_pkg_check.stdout | trim) == "NOT_FOUND"
-
-    - name: Mostrar resultado final Zabbix (con restos detectados)
-      ansible.builtin.debug:
-        msg: "Se detectaron restos de paquetes de Zabbix; revisar manualmente."
-      when: (zbx_pkg_check.stdout | trim) != "NOT_FOUND"
-
-    # --- POST-CHECK / EVIDENCIA SNMP ---
-    - name: Validar que no existan servicios/características SNMP
-      ansible.windows.win_shell: |
-        $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-        $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
-
         $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
-        $capInstalled = $false
-        if ($cap -and $cap.State -eq "Installed") { $capInstalled = $true }
-
-        $feat  = Get-WindowsFeature -Name SNMP-Service       -ErrorAction SilentlyContinue
-        $featW = Get-WindowsFeature -Name SNMP-WMI-Provider  -ErrorAction SilentlyContinue
-        $featInstalled  = ($feat  -and $feat.InstallState  -eq "Installed")
+        $capInstalled = ($cap -and $cap.State -eq "Installed")
+        $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
+        $featInstalled = ($feat -and $feat.InstallState -eq "Installed")
+        $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
         $featWInstalled = ($featW -and $featW.InstallState -eq "Installed")
 
-        if ($svc1 -or $svc2 -or $capInstalled -or $featInstalled -or $featWInstalled) { "FOUND" } else { "NOT_FOUND" }
-      register: snmp_check
-      changed_when: false
+        if (-not $capInstalled -and -not $featInstalled -and -not $featWInstalled) {
+          $out = @()
+          $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+          if ($svc) { sc.exe delete SNMP | Out-Null; $out += "DELETED:SNMP" }
+          $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
+          if ($svc2) { sc.exe delete SNMPTRAP | Out-Null; $out += "DELETED:SNMPTRAP" }
+          $out -join ";"
+        } else {
+          "SKIP_DELETE:FEATURE_OR_CAP_PRESENT"
+        }
+      register: snmp_del_services
+      changed_when: snmp_del_services.stdout is search("DELETED:")
       failed_when: false
 
-    - name: Mostrar resultado final SNMP (sin restos)
-      ansible.builtin.debug:
-        msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
-      when: (snmp_check.stdout | trim) == "NOT_FOUND"
-
-    - name: Mostrar resultado final SNMP (con restos detectados)
-      ansible.builtin.debug:
-        msg: "Se detectaron restos de SNMP; revisar manualmente."
-      when: (snmp_check.stdout | trim) != "NOT_FOUND"
+    # --- POST-CHECK / EVIDENCIA ---
+    - name: Validar que no existan paquetes 'Zabbix Agent'
+      ansible.windows.win_shell: |
+        $pkg = Get
