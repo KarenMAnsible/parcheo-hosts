@@ -1,16 +1,16 @@
 ---
-- name: Desinstalar SNMP en Linux (llave SSH)
-  hosts: linux
-  gather_facts: true
+- name: Desinstalar SNMP en Linux (con llave SSH desde Encuesta, FIX conexión)
+  hosts: all               # usa Limit al ejecutar (o cámbialo a tu grupo)
+  gather_facts: false      # evita conectar antes de poner la llave
   become: true
 
   vars:
-    # Variables que llegan desde la Encuesta de AAP (extra_vars)
+    # Variables que llegan desde la Encuesta (igual que tu plantilla Zabbix):
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
 
-    # Ajustes de conexión
+    # Ajustes de conexión (idénticos al Zabbix):
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
@@ -30,6 +30,9 @@
         ansible_ssh_private_key_file: "/tmp/ansible_key_{{ inventory_hostname }}"
       no_log: true
 
+    - name: Resetear conexión para aplicar llave/puerto
+      meta: reset_connection
+
     - name: (Opcional) Recolectar facts ahora que ya existe la llave
       setup:
 
@@ -41,27 +44,27 @@
         enabled: false
       ignore_errors: true
 
-    - name: Desinstalar paquetes SNMP en Debian/Ubuntu
-      package:
+    - name: Desinstalar SNMP en Debian/Ubuntu
+      apt:
         name:
           - snmpd
           - snmp
         state: absent
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
 
-    - name: Desinstalar paquetes SNMP en RedHat/CentOS/Rocky/Alma
-      package:
+    - name: Desinstalar SNMP en RedHat/CentOS/Rocky/Alma
+      yum:
         name:
           - net-snmp
           - net-snmp-utils
         state: absent
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Desinstalar paquetes SNMP en SUSE
-      package:
+    - name: Desinstalar SNMP en SUSE
+      zypper:
         name: net-snmp
         state: absent
-      when: ansible_os_family == "Suse"
+      when: ansible_facts['os_family'] == "Suse"
 
     - name: Eliminar archivo de configuración snmpd.conf
       file:
@@ -76,3 +79,12 @@
     - name: Confirmación final
       debug:
         msg: "✅ SNMP eliminado completamente del sistema"
+
+  post_tasks:
+    - name: Borrar la llave temporal del controlador
+      file:
+        path: "/tmp/ansible_key_{{ inventory_hostname }}"
+        state: absent
+      delegate_to: localhost
+      run_once: false
+      no_log: true
