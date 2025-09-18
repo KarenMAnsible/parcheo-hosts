@@ -112,7 +112,7 @@
       ignore_errors: yes
 
     - name: Cerrar puerto 161/udp en firewalld
-      ansible.builtin.firewalld:
+      ansible.posix.firewalld:
         port: 161/udp
         permanent: true
         state: disabled
@@ -120,7 +120,7 @@
       when: ansible_facts['os_family'] == "RedHat"
 
     - name: Cerrar puerto 161/udp en ufw
-      ansible.builtin.ufw:
+      community.general.ufw:
         rule: deny
         port: "161"
         proto: udp
