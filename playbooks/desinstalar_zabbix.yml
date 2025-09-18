@@ -33,13 +33,6 @@
         state: absent
       ignore_errors: yes
 
-    - name: Buscar carpeta 'czabbix' en todo C
-      ansible.windows.win_find:
-        paths: C:\
-        patterns: '*zabbix*'
-        recurse: yes
-      register: found_zabbix
-
     - name: Eliminar carpetas 'czabbix' encontradas
       ansible.windows.win_file:
         path: "{{ item.path }}"
