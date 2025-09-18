@@ -118,71 +118,73 @@
      # Borrar servicios si ya no existe feature/capability
     - name: Eliminar servicios SNMP/SNMPTRAP si ya no hay feature/capability
       ansible.windows.win_shell: |
-       $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
-       $capInstalled = ($cap -and $cap.State -eq "Installed")
-
-       $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
-       $featInstalled = ($feat -and $feat.InstallState -eq "Installed")
-
-       $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
-       $featWInstalled = ($featW -and $featW.InstallState -eq "Installed")
-
-       if (-not $capInstalled -and -not $featInstalled -and -not $featWInstalled) {
-         $out = @()
-         $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-         if ($svc) { sc.exe delete SNMP | Out-Null; $out += "DELETED:SNMP" } else { $out += "NOEXIST:SNMP" }
-         $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
-         if ($svc2) { sc.exe delete SNMPTRAP | Out-Null; $out += "DELETED:SNMPTRAP" } else { $out += "NOEXIST:SNMPTRAP" }
-         $out -join ";"
-       } else {
-         "SKIP_DELETE:FEATURE_OR_CAP_PRESENT"
-       }
-     register: snmp_del_services
-     changed_when: snmp_del_services.stdout is search("DELETED:")
-     failed_when: false
-
-   # Verificación detallada de qué quedó
-    - name: Validar que no existan servicios/características SNMP (detalle)
-      ansible.windows.win_shell: |
-        $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
-        $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
-        $svcPresent = @()
-        if ($svc1) { $svcPresent += "SNMP" }
-        if ($svc2) { $svcPresent += "SNMPTRAP" }
-
         $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
-        $capState = if ($cap) { $cap.State } else { "NotPresent" }
+        $capInstalled = ($cap -and $cap.State -eq "Installed")
 
         $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
-        $featState  = if ($feat) { $feat.InstallState } else { "NotPresent" }
-        $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
-        $featWState = if ($featW) { $featW.InstallState } else { "NotPresent" }
+        $featInstalled = ($feat -and $feat.InstallState -eq "Installed")
 
-        $found = ($svcPresent.Count -gt 0) -or ($capState -eq "Installed") -or ($featState -eq "Installed") -or ($featWState -eq "Installed")
-        [PSCustomObject]@{
-          services_present = ($svcPresent -join ",")
-          cap_state = $capState
-          feat_state = $featState
-          featW_state = $featWState
-          result = if ($found) { "FOUND" } else { "NOT_FOUND" }
-        } | ConvertTo-Json -Compress
-      register: snmp_check_detail
-      changed_when: false
+        $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
+        $featWInstalled = ($featW -and $featW.InstallState -eq "Installed")
+
+        if (-not $capInstalled -and -not $featInstalled -and -not $featWInstalled) {
+          $out = @()
+          $svc = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+          if ($svc) { sc.exe delete SNMP | Out-Null; $out += "DELETED:SNMP" } else { $out += "NOEXIST:SNMP" }
+          $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
+          if ($svc2) { sc.exe delete SNMPTRAP | Out-Null; $out += "DELETED:SNMPTRAP" } else { $out += "NOEXIST:SNMPTRAP" }
+          $out -join ";"
+        } else {
+          "SKIP_DELETE:FEATURE_OR_CAP_PRESENT"
+        }
+      register: snmp_del_services
+      changed_when: snmp_del_services.stdout is search("DELETED:")
       failed_when: false
 
-   - name: Mostrar detalle de verificación SNMP
-     ansible.builtin.debug:
-       var: snmp_check_detail.stdout
 
-   - name: Mostrar resultado final SNMP (sin restos)
-     ansible.builtin.debug:
-       msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
-     when: snmp_check_detail.stdout is search('"result":"NOT_FOUND"')
+   # Verificación detallada de qué quedó
+- name: Validar que no existan servicios/características SNMP (detalle)
+  ansible.windows.win_shell: |
+    $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+    $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
+    $svcPresent = @()
+    if ($svc1) { $svcPresent += "SNMP" }
+    if ($svc2) { $svcPresent += "SNMPTRAP" }
 
-   - name: Mostrar resultado final SNMP (con restos detectados)
-     ansible.builtin.debug:
-       msg: "Se detectaron restos de SNMP; revisar manualmente."
-     when: snmp_check_detail.stdout is search('"result":"FOUND"')     
+    $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
+    $capState = if ($cap) { $cap.State } else { "NotPresent" }
+
+    $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
+    $featState  = if ($feat) { $feat.InstallState } else { "NotPresent" }
+    $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
+    $featWState = if ($featW) { $featW.InstallState } else { "NotPresent" }
+
+    $found = ($svcPresent.Count -gt 0) -or ($capState -eq "Installed") -or ($featState -eq "Installed") -or ($featWState -eq "Installed")
+    [PSCustomObject]@{
+      services_present = ($svcPresent -join ",")
+      cap_state = $capState
+      feat_state = $featState
+      featW_state = $featWState
+      result = if ($found) { "FOUND" } else { "NOT_FOUND" }
+    } | ConvertTo-Json -Compress
+  register: snmp_check_detail
+  changed_when: false
+  failed_when: false
+
+- name: Mostrar detalle de verificación SNMP
+  ansible.builtin.debug:
+    var: snmp_check_detail.stdout
+
+- name: Mostrar resultado final SNMP (sin restos)
+  ansible.builtin.debug:
+    msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
+  when: snmp_check_detail.stdout is search('"result":"NOT_FOUND"')
+
+- name: Mostrar resultado final SNMP (con restos detectados)
+  ansible.builtin.debug:
+    msg: "Se detectaron restos de SNMP; revisar manualmente."
+  when: snmp_check_detail.stdout is search('"result":"FOUND"')
+     
 
     - name: Bloquear puerto SNMP (161/UDP) - método PowerShell (sin módulo)
       ansible.windows.win_shell: |
