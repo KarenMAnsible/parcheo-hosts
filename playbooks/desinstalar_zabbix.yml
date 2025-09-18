@@ -33,12 +33,6 @@
         state: absent
       ignore_errors: yes
 
-    - name: Eliminar carpetas 'czabbix' encontradas
-      ansible.windows.win_file:
-        path: "{{ item.path }}"
-        state: absent
-      loop: "{{ found_zabbix.files }}"
-      ignore_errors: yes
 
     - name: Eliminar servicio Zabbix Agent si quedó registrado
       ansible.windows.win_shell: sc.exe delete "Zabbix Agent"
@@ -135,4 +129,60 @@
     # --- POST-CHECK / EVIDENCIA ---
     - name: Validar que no existan paquetes 'Zabbix Agent'
       ansible.windows.win_shell: |
-        $pkg = Get
+        $pkg = Get-Package | Where-Object { $_.Name -like "Zabbix Agent*" }
+        if ($pkg) { "FOUND" } else { "NOT_FOUND" }
+      register: zbx_pkg_check
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado final Zabbix (sin restos)
+      ansible.builtin.debug:
+        msg: "Zabbix desinstalado correctamente (sin paquetes, servicios ni carpetas detectadas)."
+      when: (zbx_pkg_check.stdout | trim) == "NOT_FOUND"
+
+    - name: Mostrar resultado final Zabbix (con restos detectados)
+      ansible.builtin.debug:
+        msg: "Se detectaron restos de paquetes de Zabbix; revisar manualmente."
+      when: (zbx_pkg_check.stdout | trim) != "NOT_FOUND"
+
+    - name: Validar que no existan servicios/características SNMP (detalle)
+      ansible.windows.win_shell: |
+        $svc1 = Get-Service -Name SNMP -ErrorAction SilentlyContinue
+        $svc2 = Get-Service -Name SNMPTRAP -ErrorAction SilentlyContinue
+        $svcPresent = @()
+        if ($svc1) { $svcPresent += "SNMP" }
+        if ($svc2) { $svcPresent += "SNMPTRAP" }
+
+        $cap = Get-WindowsCapability -Online | Where-Object { $_.Name -like "SNMP.Client*" }
+        $capState = if ($cap) { $cap.State } else { "NotPresent" }
+
+        $feat  = Get-WindowsFeature -Name SNMP-Service -ErrorAction SilentlyContinue
+        $featState  = if ($feat) { $feat.InstallState } else { "NotPresent" }
+        $featW  = Get-WindowsFeature -Name SNMP-WMI-Provider -ErrorAction SilentlyContinue
+        $featWState = if ($featW) { $featW.InstallState } else { "NotPresent" }
+
+        $found = ($svcPresent.Count -gt 0) -or ($capState -eq "Installed") -or ($featState -eq "Installed") -or ($featWState -eq "Installed")
+        [PSCustomObject]@{
+          services_present = ($svcPresent -join ",")
+          cap_state = $capState
+          feat_state = $featState
+          featW_state = $featWState
+          result = if ($found) { "FOUND" } else { "NOT_FOUND" }
+        } | ConvertTo-Json -Compress
+      register: snmp_check_detail
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar detalle de verificación SNMP
+      ansible.builtin.debug:
+        var: snmp_check_detail.stdout
+
+    - name: Mostrar resultado final SNMP (sin restos)
+      ansible.builtin.debug:
+        msg: "SNMP desinstalado correctamente (sin servicios ni características activas)."
+      when: snmp_check_detail.stdout is search('"result":"NOT_FOUND"')
+
+    - name: Mostrar resultado final SNMP (con restos detectados)
+      ansible.builtin.debug:
+        msg: "Se detectaron restos de SNMP; revisar manualmente."
+      when: snmp_check_detail.stdout is search('"result":"FOUND"')
