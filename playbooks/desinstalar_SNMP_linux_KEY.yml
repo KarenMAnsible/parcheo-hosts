@@ -1,0 +1,49 @@
+---
+- name: Desinstalar SNMP en Linux (llave SSH)
+  hosts: linux
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Detener servicio SNMP si existe
+      service:
+        name: snmpd
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Desinstalar paquetes SNMP en Debian/Ubuntu
+      package:
+        name:
+          - snmpd
+          - snmp
+        state: absent
+      when: ansible_os_family == "Debian"
+
+    - name: Desinstalar paquetes SNMP en RedHat/CentOS/Rocky/Alma
+      package:
+        name:
+          - net-snmp
+          - net-snmp-utils
+        state: absent
+      when: ansible_os_family == "RedHat"
+
+    - name: Desinstalar paquetes SNMP en SUSE
+      package:
+        name: net-snmp
+        state: absent
+      when: ansible_os_family == "Suse"
+
+    - name: Eliminar archivo de configuración snmpd.conf
+      file:
+        path: /etc/snmp/snmpd.conf
+        state: absent
+
+    - name: Eliminar directorio /etc/snmp si queda vacío
+      file:
+        path: /etc/snmp
+        state: absent
+
+    - name: Confirmación final
+      debug:
+        msg: "✅ SNMP eliminado completamente del sistema"
