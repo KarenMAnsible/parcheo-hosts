@@ -1,0 +1,70 @@
+---
+- name: Desinstalar SNMP y cerrar 161/udp
+  hosts: linux
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Desinstalar paquetes SNMP (net-snmp y snmpd)
+      ansible.builtin.package:
+        name:
+          - net-snmp
+          - snmpd
+        state: absent
+
+    - name: Detener y deshabilitar snmpd si existe
+      ansible.builtin.service:
+        name: snmpd
+        state: stopped
+        enabled: no
+      ignore_errors: true
+
+    - name: Cerrar 161/udp en firewalld (RHEL/CentOS)
+      ansible.posix.firewalld:
+        port: 161/udp
+        permanent: true
+        state: disabled
+        immediate: true
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Cerrar 161/udp en UFW (Debian/Ubuntu)
+      community.general.ufw:
+        rule: deny
+        port: "161"
+        proto: udp
+      when: ansible_facts['os_family'] == "Debian"
+
+    # --- Post-check (evidencias) ---
+    - name: Verificar paquetes SNMP en RedHat
+      ansible.builtin.command: rpm -q net-snmp snmpd
+      register: snmp_rpm_check
+      failed_when: false
+      changed_when: false
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Verificar paquetes SNMP en Debian/Ubuntu
+      ansible.builtin.command: dpkg -l | grep -E '(^| )snmp|net-snmp'
+      register: snmp_dpkg_check
+      failed_when: false
+      changed_when: false
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Evidencia paquetes (RedHat)
+      ansible.builtin.debug:
+        msg: "{{ snmp_rpm_check.stdout_lines }}"
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Evidencia paquetes (Debian/Ubuntu)
+      ansible.builtin.debug:
+        msg: "{{ snmp_dpkg_check.stdout_lines }}"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Verificar estado del puerto 161/udp
+      ansible.builtin.command: ss -lun | grep ':161'
+      register: snmp_port_check
+      failed_when: false
+      changed_when: false
+
+    - name: Evidencia puerto 161/udp
+      ansible.builtin.debug:
+        msg: "{{ snmp_port_check.stdout_lines | default('161/udp no detectado (OK)') }}"
