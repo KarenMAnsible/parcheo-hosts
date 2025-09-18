@@ -96,35 +96,35 @@
         msg: "No se encontraron carpetas adicionales llamadas 'zabbix' fuera de las rutas comunes."
       when: (zabbix_dirs_all | default([])) | length == 0
 
-    
-        - name: Desinstalar paquetes SNMP (net-snmp)
-          package:
-            name:
-              - net-snmp
-              - snmpd
-            state: absent
 
-        - name: Detener y deshabilitar servicio snmpd si existe
-          service:
-            name: snmpd
-            state: stopped
-            enabled: no
-          ignore_errors: yes
+    - name: Desinstalar paquetes SNMP (net-snmp)
+      package:
+        name:
+          - net-snmp
+          - snmpd
+        state: absent
 
-        - name: Cerrar puerto 161/udp en firewalld
-          ansible.builtin.firewalld:
-            port: 161/udp
-            permanent: true
-            state: disabled
-            immediate: true
-          when: ansible_facts['os_family'] == "RedHat"
+    - name: Detener y deshabilitar servicio snmpd si existe
+      service:
+        name: snmpd
+        state: stopped
+        enabled: no
+      ignore_errors: yes
 
-        - name: Cerrar puerto 161/udp en ufw
-          ansible.builtin.ufw:
-            rule: deny
-            port: "161"
-            proto: udp
-          when: ansible_facts['os_family'] == "Debian"
+    - name: Cerrar puerto 161/udp en firewalld
+      ansible.builtin.firewalld:
+        port: 161/udp
+        permanent: true
+        state: disabled
+        immediate: true
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Cerrar puerto 161/udp en ufw
+      ansible.builtin.ufw:
+        rule: deny
+        port: "161"
+        proto: udp
+      when: ansible_facts['os_family'] == "Debian"
 
 
     # --- Post-check ---
