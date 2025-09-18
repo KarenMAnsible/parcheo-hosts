@@ -1,6 +1,6 @@
 ---
 - name: Desinstalar SNMP y cerrar 161/udp
-  hosts: linux
+  hosts: "{{ host_objetivo }}"
   gather_facts: true
   become: true
 
