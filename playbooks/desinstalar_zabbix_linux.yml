@@ -97,11 +97,6 @@
       when: (zabbix_dirs_all | default([])) | length == 0
 
     
-    - name: Desinstalar SNMP y cerrar puerto 161/udp en Linux
-      hosts: a_desinstalar_snmp_linux
-      become: true
-      tasks:
-
         - name: Desinstalar paquetes SNMP (net-snmp)
           package:
             name:
