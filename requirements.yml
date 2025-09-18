@@ -2,4 +2,9 @@
 collections:
   - name: ansible.windows
   - name: ansible.posix
+  - name: ansible.posix
+    version: "1.5.4"
   - name: community.general
+    version: "8.5.0"
+  - name: ansible.windows
+    version: "2.1.0"

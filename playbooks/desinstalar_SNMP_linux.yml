@@ -4,6 +4,13 @@
   gather_facts: true
   become: true
 
+  vars:
+    # Si la encuesta no las manda, OMIT para no romper credenciales existentes
+    ansible_user: "{{ usuario_ssh | default(omit) }}"
+    ansible_password: "{{ contrasena_ssh | default(omit) }}"
+    ansible_become: "{{ usar_sudo | default(true) | bool }}"
+    ansible_become_password: "{{ contrasena_sudo | default(omit) }}"
+
   tasks:
     - name: Desinstalar paquetes SNMP (net-snmp y snmpd)
       ansible.builtin.package:
