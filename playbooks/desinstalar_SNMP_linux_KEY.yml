@@ -4,6 +4,35 @@
   gather_facts: true
   become: true
 
+  vars:
+    # Variables que llegan desde la Encuesta de AAP (extra_vars)
+    usuario_ssh: "{{ usuario_ssh }}"
+    puerto_ssh: "{{ puerto_ssh | default(22) }}"
+    llave_ssh: "{{ llave_ssh }}"
+
+    # Ajustes de conexión
+    ansible_user: "{{ usuario_ssh }}"
+    ansible_port: "{{ puerto_ssh }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+  pre_tasks:
+    - name: Crear archivo temporal con la llave privada en el controlador
+      copy:
+        content: "{{ llave_ssh }}"
+        dest: "/tmp/ansible_key_{{ inventory_hostname }}"
+        mode: '0600'
+      delegate_to: localhost
+      run_once: false
+      no_log: true
+
+    - name: Anunciar a SSH dónde está la llave
+      set_fact:
+        ansible_ssh_private_key_file: "/tmp/ansible_key_{{ inventory_hostname }}"
+      no_log: true
+
+    - name: (Opcional) Recolectar facts ahora que ya existe la llave
+      setup:
+
   tasks:
     - name: Detener servicio SNMP si existe
       service:
