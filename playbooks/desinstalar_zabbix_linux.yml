@@ -95,3 +95,74 @@
       ansible.builtin.debug:
         msg: "No se encontraron carpetas adicionales llamadas 'zabbix' fuera de las rutas comunes."
       when: (zabbix_dirs_all | default([])) | length == 0
+
+    
+    - name: Desinstalar SNMP y cerrar puerto 161/udp en Linux
+      hosts: a_desinstalar_snmp_linux
+      become: true
+      tasks:
+
+        - name: Desinstalar paquetes SNMP (net-snmp)
+          package:
+            name:
+              - net-snmp
+              - snmpd
+            state: absent
+
+        - name: Detener y deshabilitar servicio snmpd si existe
+          service:
+            name: snmpd
+            state: stopped
+            enabled: no
+          ignore_errors: yes
+
+        - name: Cerrar puerto 161/udp en firewalld
+          ansible.builtin.firewalld:
+            port: 161/udp
+            permanent: true
+            state: disabled
+            immediate: true
+          when: ansible_facts['os_family'] == "RedHat"
+
+        - name: Cerrar puerto 161/udp en ufw
+          ansible.builtin.ufw:
+            rule: deny
+            port: "161"
+            proto: udp
+          when: ansible_facts['os_family'] == "Debian"
+
+
+    # --- Post-check ---
+    - name: Verificar que paquetes SNMP ya no estén instalados
+      command: rpm -q net-snmp snmpd
+      register: snmp_rpm_check
+      failed_when: false
+      changed_when: false
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Mostrar resultado de verificación de paquetes (RedHat)
+      debug:
+        msg: "{{ snmp_rpm_check.stdout_lines }}"
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Verificar que paquetes SNMP ya no estén instalados (Debian/Ubuntu)
+      command: dpkg -l | grep -E 'snmp|net-snmp'
+      register: snmp_dpkg_check
+      failed_when: false
+      changed_when: false
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Mostrar resultado de verificación de paquetes (Debian/Ubuntu)
+      debug:
+        msg: "{{ snmp_dpkg_check.stdout_lines }}"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Verificar estado del puerto 161/udp
+      command: ss -lun | grep ':161'
+      register: snmp_port_check
+      failed_when: false
+      changed_when: false
+
+    - name: Mostrar evidencia del puerto 161/udp
+      debug:
+        msg: "{{ snmp_port_check.stdout_lines | default('Puerto 161/udp no detectado (correcto)') }}"
