@@ -1,99 +1,162 @@
 ---
-- name: Desinstalar Zabbix en Linux (con búsqueda y limpieza de carpetas)
-  hosts: linux
-  gather_facts: true
+- name: Desinstalar Zabbix – Linux (Password, robusto)
+  hosts: a_desinstalar_zabbix_linux
+  gather_facts: false
   become: true
 
   vars:
-    zabbix_pkg_candidates:
-      - zabbix-agent
-      - zabbix-agent2
-    zabbix_common_paths:
-      - /etc
-      - /var
-      - /usr/local
-      - /opt
-      - /home
+    # Variables desde la Encuesta de AAP
+    ansible_user: "{{ usuario_ssh }}"
+    ansible_port: "{{ puerto_ssh | default(22) }}"
+    ansible_password: "{{ contrasena_ssh }}"
+    # Evita confirmar host key
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+  pre_tasks:
+    - name: Validar que llegó la contraseña desde la Encuesta
+      assert:
+        that:
+          - contrasena_ssh is defined
+          - (contrasena_ssh | length) > 0
+        fail_msg: "No llegó la variable 'contrasena_ssh' desde la Encuesta."
+      no_log: true
+      run_once: true
+
+    - name: (Opcional) Definir become_password si se proporcionó
+      set_fact:
+        ansible_become_password: "{{ sudo_password }}"
+      when: sudo_password is defined and (sudo_password | length) > 0
+      no_log: true
+
+    # -------- Bootstrap Python sin depender de facts --------
+    - name: Detectar si existe Python en el host
+      raw: "command -v python3 || command -v python2.7 || command -v python2 || command -v python"
+      register: _py_detect
+      changed_when: false
+      failed_when: false
+
+    - name: Instalar Python 3 si no existe (según gestor disponible)
+      raw: |
+        if ! command -v python3 >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1; then
+            DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y python3
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y python3
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y python3
+          elif command -v zypper >/dev/null 2>&1; then
+            zypper -n in python3
+          fi
+        fi
+      when: _py_detect.rc != 0
+      changed_when: true
+
+    - name: Elegir intérprete disponible (prefiere python3)
+      raw: "command -v python3 || command -v python2.7 || command -v python2 || command -v python"
+      register: _py_path
+      changed_when: false
+
+    - name: Definir ansible_python_interpreter para el resto del play
+      set_fact:
+        ansible_python_interpreter: "{{ (_py_path.stdout.splitlines() | last) | default('/usr/bin/python3') }}"
+
+    - name: Recolectar facts
+      setup:
 
   tasks:
-    - name: Detener servicios Zabbix (si existen)
-      ansible.builtin.service:
+    - name: Recopilar servicios del sistema
+      service_facts:
+
+    # ------------------- DEBIAN/UBUNTU -------------------
+    - name: Detener servicios Zabbix en Debian/Ubuntu (si existen)
+      service:
         name: "{{ item }}"
         state: stopped
+        enabled: false
       loop:
         - zabbix-agent
         - zabbix-agent2
-      ignore_errors: true
-
-    # Para distros que NO sean SUSE usamos 'package' genérico
-    - name: Desinstalar paquetes Zabbix (no-SUSE)
-      ansible.builtin.package:
-        name: "{{ zabbix_pkg_candidates }}"
-        state: absent
-      when: ansible_facts.os_family != "Suse"
-      ignore_errors: true
-
-    # Para SUSE usamos zypper directo (evita depender de colecciones)
-    - name: Desinstalar Zabbix en SUSE con zypper
-      ansible.builtin.command: >
-        zypper --non-interactive remove -y zabbix-agent zabbix-agent2
-      when: ansible_facts.os_family == "Suse"
-      register: zypper_remove
-      changed_when: >
-        (zypper_remove.rc == 0) and
-        ("Nothing to do" not in (zypper_remove.stdout | default(""))) and
-        ("not found" not in (zypper_remove.stdout | default("")) | lower)
+      register: stop_svc_deb
       failed_when: false
+      when: ansible_facts['distribution'] in ['Ubuntu', 'Debian']
 
-    # Limpiezas directas de rutas típicas
-    - name: Eliminar carpeta config /etc/zabbix si existe
-      ansible.builtin.file:
-        path: /etc/zabbix
+    - name: Purga paquetes Zabbix en Debian/Ubuntu
+      apt:
+        name:
+          - zabbix-agent
+          - zabbix-agent2
         state: absent
-      ignore_errors: true
+        purge: true
+        autoremove: true
+        update_cache: true
+      when: ansible_facts['distribution'] in ['Ubuntu', 'Debian']
+      become: true
 
-    - name: Eliminar carpeta datos /var/lib/zabbix si existe
-      ansible.builtin.file:
-        path: /var/lib/zabbix
-        state: absent
-      ignore_errors: true
-
-    - name: Eliminar carpeta logs /var/log/zabbix si existe
-      ansible.builtin.file:
-        path: /var/log/zabbix
-        state: absent
-      ignore_errors: true
-
-    # Búsqueda de carpetas 'zabbix' en rutas comunes (fallback)
-    - name: Buscar carpetas llamadas 'zabbix' en rutas comunes
-      ansible.builtin.find:
-        paths: "{{ item }}"
-        file_type: directory
-        patterns: "zabbix"
-        recurse: true
-        follow: false
-      loop: "{{ zabbix_common_paths }}"
-      register: zabbix_dirs_found
+    # ------------------- REDHAT-LIKE -------------------
+    - name: Detener servicios Zabbix en RedHat-like (si existen)
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - zabbix-agent
+        - zabbix-agent2
+      register: stop_svc_rh
       failed_when: false
-      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Consolidar rutas encontradas
-      ansible.builtin.set_fact:
-        zabbix_dirs_all: "{{ (zabbix_dirs_all | default([])) + (item.files | map(attribute='path') | list) }}"
-      loop: "{{ zabbix_dirs_found.results | default([]) }}"
-      when: item.matched | default(0) | int > 0
+    - name: Quitar paquetes Zabbix en RedHat-like
+      yum:
+        name:
+          - zabbix-agent
+          - zabbix-agent2
+        state: absent
+        autoremove: true
+      when: ansible_facts['os_family'] == 'RedHat'
+      become: true
 
-    - name: Eliminar todas las carpetas 'zabbix' encontradas
-      ansible.builtin.file:
+    # ------------------- SUSE -------------------
+    - name: Detener servicios Zabbix en SUSE (si existen)
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - zabbix-agent
+        - zabbix-agent2
+      register: stop_svc_suse
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Suse'
+
+    - name: Quitar paquetes Zabbix en SUSE
+      zypper:
+        name:
+          - zabbix-agent
+          - zabbix-agent2
+        state: absent
+      when: ansible_facts['os_family'] == 'Suse'
+      become: true
+
+    # ------------------- LIMPIEZA GENERAL -------------------
+    - name: Limpiar restos de configuración (todas las distros)
+      file:
         path: "{{ item }}"
         state: absent
-      loop: "{{ zabbix_dirs_all | default([]) }}"
-      when: (zabbix_dirs_all | default([])) | length > 0
-      ignore_errors: true
+      loop:
+        - /etc/zabbix
+        - /var/log/zabbix
+        - /var/run/zabbix
+      become: true
+      failed_when: false
 
-    - name: Aviso si no se encontró ninguna carpeta 'zabbix' extra
-      ansible.builtin.debug:
-        msg: "No se encontraron carpetas adicionales llamadas 'zabbix' fuera de las rutas comunes."
-      when: (zabbix_dirs_all | default([])) | length == 0
+    - name: Confirmar que no hay procesos de Zabbix activos
+      shell: "pgrep -fa 'zabbix' || true"
+      register: zbx_procs
+      changed_when: false
 
-
+    - name: Mostrar verificación
+      debug:
+        msg:
+          - "SO: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "Gestor de paquetes: {{ ansible_facts['pkg_mgr'] | default('desconocido') }}"
+          - "Procesos zabbix: {{ zbx_procs.stdout | default('sin procesos') }}"
