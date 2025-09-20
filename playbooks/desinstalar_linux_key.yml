@@ -148,10 +148,18 @@
         if [ -n "$pids" ]; then
           kill -9 $pids
         fi
-      args: { warn: false }
+      args:
+        warn: false
       ignore_errors: true
 
-    - name: Eliminar binarios residuales de Zabbix
+    - name: Buscar y eliminar binarios residuales de Zabbix en todo el sistema
+      ansible.builtin.shell: |
+        find / -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null
+      args:
+        warn: false
+      ignore_errors: true
+
+    - name: Eliminar binarios residuales en rutas típicas (por si acaso)
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
