@@ -1,19 +1,19 @@
 ---
 - name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + debug conexión)
   hosts: a_desinstalar_zabbix_linux
-  gather_facts: false          # ¡Importante! No intentes conectar antes de crear la llave
+  gather_facts: false
   become: true
 
   vars:
-    # Variables que llegan desde la Encuesta
+    # Variables de Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
 
-    # Ruta única de la llave temporal en el Controller
+    # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
-    # Parámetros de conexión usados por Ansible
+    # Parámetros de conexión
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -29,21 +29,18 @@
 
     - name: Escribir llave privada temporal en el nodo controlador
       ansible.builtin.copy:
-        # Si la encuesta trae "\n" literales, conviértelos a saltos reales
         content: "{{ (llave_ssh | replace('\\r','') | replace('\\n','\n')) }}"
         dest: "{{ private_key_path }}"
         mode: '0600'
       run_once: true
       delegate_to: localhost
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
-      # no_log: true   # ← Activa cuando termines de depurar
+      vars: { ansible_python_interpreter: /usr/bin/python3 }
+      # no_log: true   # actívalo al terminar de depurar
 
     - name: DEBUG destino (host/puerto)
       ansible.builtin.debug:
         msg: "Voy a conectar a {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}:{{ ansible_port | default(puerto_ssh) }}"
 
-    # Prueba con netcat si está disponible
     - name: Probar apertura de puerto con netcat (si existe)
       ansible.builtin.command: >
         sh -lc 'command -v nc >/dev/null 2>&1 &&
@@ -53,14 +50,12 @@
       register: nc_test
       changed_when: false
       failed_when: false
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
+      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
     - name: Resultado netcat
       ansible.builtin.debug:
         var: nc_test.stderr
 
-    # Fallback por /dev/tcp en caso de que no haya nc o falle
     - name: Probar apertura de puerto con /dev/tcp (fallback)
       ansible.builtin.shell: >
         timeout 5 bash -lc 'echo >/dev/tcp/{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}/{{ ansible_port | default(puerto_ssh) }}'
@@ -68,8 +63,7 @@
       register: devtcp_test
       changed_when: false
       failed_when: false
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
+      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
     - name: Resultado /dev/tcp (fallback)
       ansible.builtin.debug:
@@ -83,11 +77,10 @@
         connect_timeout: 5
         state: started
       delegate_to: localhost
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
+      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
   tasks:
-    # Recolectamos facts SOLO después de que la conexión ya está lista
+    # Recolectar facts solo después de que la conexión esté lista
     - name: Recolectar facts ahora que la conexión está configurada
       ansible.builtin.setup:
 
@@ -138,7 +131,7 @@
         state: absent
       when: ansible_os_family == "Suse"
 
-    # === Limpieza común ===
+    # === Limpieza común de restos ===
     - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
@@ -147,6 +140,25 @@
         - /etc/zabbix
         - /var/log/zabbix
         - /var/lib/zabbix
+      ignore_errors: true
+
+    - name: Matar procesos Zabbix si siguen activos
+      ansible.builtin.shell: |
+        pids=$(pgrep -f 'zabbix[-_]agent') || true
+        if [ -n "$pids" ]; then
+          kill -9 $pids
+        fi
+      args: { warn: false }
+      ignore_errors: true
+
+    - name: Eliminar binarios residuales de Zabbix
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/sbin/zabbix_agentd
+        - /usr/local/sbin/zabbix_agentd
+        - /usr/bin/zabbix_agentd
       ignore_errors: true
 
     - name: Verificación post-desinstalación
