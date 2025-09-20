@@ -1,15 +1,19 @@
 ---
-- name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + debug conexión + limpieza reforzada)
+- name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + limpieza reforzada)
   hosts: a_desinstalar_zabbix_linux
   gather_facts: false
   become: true
 
   vars:
+    # Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
+
+    # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
+    # Conexión
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -32,35 +36,9 @@
       delegate_to: localhost
       vars: { ansible_python_interpreter: /usr/bin/python3 }
 
-    - name: DEBUG destino (host/puerto)
+    - name: Mostrar destino de conexión (DEBUG)
       ansible.builtin.debug:
-        msg: "Voy a conectar a {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}:{{ ansible_port | default(puerto_ssh) }}"
-
-    - name: Probar apertura de puerto con netcat (si existe)
-      ansible.builtin.command: >
-        sh -lc 'command -v nc >/dev/null 2>&1 &&
-        nc -vz {{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}
-               {{ ansible_port | default(puerto_ssh) }} || true'
-      delegate_to: localhost
-      register: nc_test
-      changed_when: false
-      failed_when: false
-
-    - name: Resultado netcat
-      ansible.builtin.debug:
-        var: nc_test.stderr
-
-    - name: Probar apertura de puerto con /dev/tcp (fallback)
-      ansible.builtin.shell: >
-        timeout 5 bash -lc 'echo >/dev/tcp/{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}/{{ ansible_port | default(puerto_ssh) }}'
-      delegate_to: localhost
-      register: devtcp_test
-      changed_when: false
-      failed_when: false
-
-    - name: Resultado /dev/tcp (fallback)
-      ansible.builtin.debug:
-        msg: "{{ 'OK' if devtcp_test.rc == 0 else 'FAIL' }}"
+        msg: "Conectaré a {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}:{{ ansible_port | default(puerto_ssh) }}"
 
     - name: Esperar que el puerto SSH esté abierto
       ansible.builtin.wait_for:
@@ -70,6 +48,7 @@
         connect_timeout: 5
         state: started
       delegate_to: localhost
+      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
   tasks:
     - name: Recolectar facts ahora que la conexión está configurada
@@ -122,7 +101,7 @@
         state: absent
       when: ansible_os_family == "Suse"
 
-    # Limpieza común
+    # === Limpieza común ===
     - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
@@ -133,7 +112,7 @@
         - /var/lib/zabbix
       ignore_errors: true
 
-    # Limpieza reforzada
+    # === Limpieza reforzada mínima y estable ===
     - name: Detener/Deshabilitar/Enmascarar servicios Zabbix (systemd)
       ansible.builtin.shell: |
         set -euo pipefail
@@ -152,7 +131,6 @@
         set -euo pipefail
         PIDS=$(pgrep -f -a 'zabbix(_|-)?(agent|agent2|proxy)' || true)
         if [ -n "$PIDS" ]; then
-          echo "$PIDS" 1>&2 || true
           for pid in $(echo "$PIDS" | awk '{print $1}'); do
             EXE=$(readlink -f "/proc/$pid/exe" || true)
             kill -9 "$pid" 2>/dev/null || true
@@ -160,8 +138,8 @@
           done
         fi
       args: { executable: /bin/bash }
-      changed_when: true
       ignore_errors: true
+      failed_when: false
 
     - name: Eliminar unit files zabbix* y recargar systemd
       ansible.builtin.shell: |
@@ -170,6 +148,7 @@
         systemctl daemon-reload || true
       args: { executable: /bin/bash }
       ignore_errors: true
+      failed_when: false
 
     - name: Eliminar entradas de cron relacionadas con Zabbix
       ansible.builtin.shell: |
@@ -182,108 +161,17 @@
         grep -Ilr --exclude-dir={.git,proc,sys} -e 'zabbix' /etc/cron* 2>/dev/null | xargs -r sed -i '/zabbix/Id'
       args: { executable: /bin/bash }
       ignore_errors: true
+      failed_when: false
 
-    - name: Buscar y eliminar binarios 'zabbix_agentd' en todo el sistema
+    - name: Buscar y eliminar binarios 'zabbix_agentd' en todo el sistema (best-effort)
       ansible.builtin.shell: |
         set -euo pipefail
         find / -xdev -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null || true
       args: { executable: /bin/bash }
       ignore_errors: true
+      failed_when: false
 
-    # Diagnóstico
-    - name: Listar procesos Zabbix remanentes (diagnóstico)
-      ansible.builtin.shell: |
-        set -euo pipefail
-        ps -eo pid,ppid,user,cmd | awk 'BEGIN{IGNORECASE=1}/zabbix/{print}'
-        echo "--- exe targets ---"
-        for p in $(pgrep -f -a 'zabbix' | awk '{print $1}'); do
-          printf "%s -> " "$p"
-          readlink -f "/proc/$p/exe" || true
-        done
-      args: { executable: /bin/bash }
-      register: zbx_diag
-      changed_when: false
-      ignore_errors: true
-
-    - name: Mostrar diagnóstico de procesos
-      ansible.builtin.debug:
-        var: zbx_diag.stdout
-
-    - name: Detener y eliminar contenedores Docker con zabbix
-      ansible.builtin.shell: |
-        set -euo pipefail
-        command -v docker >/dev/null 2>&1 || exit 0
-        ids=$(docker ps --format '{{.ID}} {{.Image}} {{.Names}}' | awk 'BEGIN{IGNORECASE=1}/zabbix/{print $1}')
-        [ -z "$ids" ] && exit 0
-        docker stop $ids || true
-        docker rm $ids || true
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    - name: Detener y eliminar contenedores Podman con zabbix
-      ansible.builtin.shell: |
-        set -euo pipefail
-        command -v podman >/dev/null 2>&1 || exit 0
-        ids=$(podman ps --format '{{.ID}} {{.Image}} {{.Names}}' | awk 'BEGIN{IGNORECASE=1}/zabbix/{print $1}')
-        [ -z "$ids" ] && exit 0
-        podman stop $ids || true
-        podman rm $ids || true
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    - name: Deshabilitar scripts init.d relacionados con Zabbix (legacy)
-      ansible.builtin.shell: |
-        set -euo pipefail
-        for f in /etc/init.d/zabbix*; do
-          [ -e "$f" ] || continue
-          if command -v update-rc.d >/dev/null 2>&1; then
-            update-rc.d -f "$(basename "$f")" remove || true
-          fi
-          if command -v chkconfig >/dev/null 2>&1; then
-            chkconfig --del "$(basename "$f")" || true
-          fi
-          rm -f "$f" || true
-        done
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    - name: Limpiar llamadas a zabbix en rc.local
-      ansible.builtin.shell: |
-        set -euo pipefail
-        for rc in /etc/rc.local /etc/rc.d/rc.local; do
-          [ -f "$rc" ] || continue
-          sed -i '/zabbix/Id' "$rc" || true
-          chmod +x "$rc" || true
-        done
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    - name: Eliminar jobs de supervisord con zabbix y recargar
-      ansible.builtin.shell: |
-        set -euo pipefail
-        command -v supervisorctl >/dev/null 2>&1 || exit 0
-        grep -Ilr -e 'zabbix' /etc/supervisor 2>/dev/null | xargs -r rm -f
-        supervisorctl reread || true
-        supervisorctl update || true
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    - name: Reintentar matar procesos Zabbix y borrar ejecutables reales
-      ansible.builtin.shell: |
-        set -euo pipefail
-        PIDS=$(pgrep -f -a 'zabbix' || true)
-        if [ -n "$PIDS" ]; then
-          echo "$PIDS" 1>&2 || true
-          for pid in $(echo "$PIDS" | awk '{print $1}'); do
-            EXE=$(readlink -f "/proc/$pid/exe" || true)
-            kill -9 "$pid" 2>/dev/null || true
-            [ -n "$EXE" ] && [ -e "$EXE" ] && rm -f "$EXE" || true
-          done
-        fi
-      args: { executable: /bin/bash }
-      ignore_errors: true
-
-    # Verificación final
+    # === Verificación final robusta (sin falsos positivos) ===
     - name: Verificación post-desinstalación (final)
       ansible.builtin.shell: |
         set -euo pipefail
