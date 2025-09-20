@@ -5,15 +5,11 @@
   become: true
 
   vars:
-    # Variables de Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
-
-    # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
-    # Parámetros de conexión
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -35,7 +31,6 @@
       run_once: true
       delegate_to: localhost
       vars: { ansible_python_interpreter: /usr/bin/python3 }
-      # no_log: true   # actívalo al terminar de depurar
 
     - name: DEBUG destino (host/puerto)
       ansible.builtin.debug:
@@ -50,7 +45,6 @@
       register: nc_test
       changed_when: false
       failed_when: false
-      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
     - name: Resultado netcat
       ansible.builtin.debug:
@@ -63,7 +57,6 @@
       register: devtcp_test
       changed_when: false
       failed_when: false
-      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
     - name: Resultado /dev/tcp (fallback)
       ansible.builtin.debug:
@@ -77,7 +70,6 @@
         connect_timeout: 5
         state: started
       delegate_to: localhost
-      vars: { ansible_python_interpreter: /usr/bin/python3 }
 
   tasks:
     - name: Recolectar facts ahora que la conexión está configurada
@@ -130,7 +122,7 @@
         state: absent
       when: ansible_os_family == "Suse"
 
-    # ==== Limpieza común de restos ====
+    # Limpieza común
     - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
@@ -141,7 +133,7 @@
         - /var/lib/zabbix
       ignore_errors: true
 
-    # ==== Limpieza reforzada (systemd/cron/binarios/contenedores/etc.) ====
+    # Limpieza reforzada
     - name: Detener/Deshabilitar/Enmascarar servicios Zabbix (systemd)
       ansible.builtin.shell: |
         set -euo pipefail
@@ -184,5 +176,134 @@
         set -euo pipefail
         if crontab -u root -l >/tmp/cron.root 2>/dev/null; then
           sed -i '/zabbix/Id' /tmp/cron.root || true
-          cron
+          crontab -u root /tmp/cron.root || true
+          rm -f /tmp/cron.root || true
+        fi
+        grep -Ilr --exclude-dir={.git,proc,sys} -e 'zabbix' /etc/cron* 2>/dev/null | xargs -r sed -i '/zabbix/Id'
+      args: { executable: /bin/bash }
+      ignore_errors: true
 
+    - name: Buscar y eliminar binarios 'zabbix_agentd' en todo el sistema
+      ansible.builtin.shell: |
+        set -euo pipefail
+        find / -xdev -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null || true
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    # Diagnóstico
+    - name: Listar procesos Zabbix remanentes (diagnóstico)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        ps -eo pid,ppid,user,cmd | awk 'BEGIN{IGNORECASE=1}/zabbix/{print}'
+        echo "--- exe targets ---"
+        for p in $(pgrep -f -a 'zabbix' | awk '{print $1}'); do
+          printf "%s -> " "$p"
+          readlink -f "/proc/$p/exe" || true
+        done
+      args: { executable: /bin/bash }
+      register: zbx_diag
+      changed_when: false
+      ignore_errors: true
+
+    - name: Mostrar diagnóstico de procesos
+      ansible.builtin.debug:
+        var: zbx_diag.stdout
+
+    - name: Detener y eliminar contenedores Docker con zabbix
+      ansible.builtin.shell: |
+        set -euo pipefail
+        command -v docker >/dev/null 2>&1 || exit 0
+        ids=$(docker ps --format '{{.ID}} {{.Image}} {{.Names}}' | awk 'BEGIN{IGNORECASE=1}/zabbix/{print $1}')
+        [ -z "$ids" ] && exit 0
+        docker stop $ids || true
+        docker rm $ids || true
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Detener y eliminar contenedores Podman con zabbix
+      ansible.builtin.shell: |
+        set -euo pipefail
+        command -v podman >/dev/null 2>&1 || exit 0
+        ids=$(podman ps --format '{{.ID}} {{.Image}} {{.Names}}' | awk 'BEGIN{IGNORECASE=1}/zabbix/{print $1}')
+        [ -z "$ids" ] && exit 0
+        podman stop $ids || true
+        podman rm $ids || true
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Deshabilitar scripts init.d relacionados con Zabbix (legacy)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        for f in /etc/init.d/zabbix*; do
+          [ -e "$f" ] || continue
+          if command -v update-rc.d >/dev/null 2>&1; then
+            update-rc.d -f "$(basename "$f")" remove || true
+          fi
+          if command -v chkconfig >/dev/null 2>&1; then
+            chkconfig --del "$(basename "$f")" || true
+          fi
+          rm -f "$f" || true
+        done
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Limpiar llamadas a zabbix en rc.local
+      ansible.builtin.shell: |
+        set -euo pipefail
+        for rc in /etc/rc.local /etc/rc.d/rc.local; do
+          [ -f "$rc" ] || continue
+          sed -i '/zabbix/Id' "$rc" || true
+          chmod +x "$rc" || true
+        done
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Eliminar jobs de supervisord con zabbix y recargar
+      ansible.builtin.shell: |
+        set -euo pipefail
+        command -v supervisorctl >/dev/null 2>&1 || exit 0
+        grep -Ilr -e 'zabbix' /etc/supervisor 2>/dev/null | xargs -r rm -f
+        supervisorctl reread || true
+        supervisorctl update || true
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Reintentar matar procesos Zabbix y borrar ejecutables reales
+      ansible.builtin.shell: |
+        set -euo pipefail
+        PIDS=$(pgrep -f -a 'zabbix' || true)
+        if [ -n "$PIDS" ]; then
+          echo "$PIDS" 1>&2 || true
+          for pid in $(echo "$PIDS" | awk '{print $1}'); do
+            EXE=$(readlink -f "/proc/$pid/exe" || true)
+            kill -9 "$pid" 2>/dev/null || true
+            [ -n "$EXE" ] && [ -e "$EXE" ] && rm -f "$EXE" || true
+          done
+        fi
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    # Verificación final
+    - name: Verificación post-desinstalación (final)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if pgrep -fa 'zabbix' | grep -vE 'pgrep|awk|bash' >/dev/null 2>&1; then
+          echo "AÚN QUEDA ZABBIX (proceso real) — detalle:"
+          pgrep -fa 'zabbix' | grep -vE 'pgrep|awk|bash'
+          exit 1
+        fi
+        command -v zabbix_agentd >/dev/null 2>&1 && { echo "AÚN QUEDA ZABBIX (binario en PATH)"; exit 1; }
+        systemctl list-unit-files 'zabbix*' --type=service --no-legend | grep -q . && { echo "AÚN QUEDA ZABBIX (unit files)"; exit 1; }
+        [ -e /usr/sbin/zabbix_agentd ] || [ -e /usr/local/sbin/zabbix_agentd ] || [ -e /usr/bin/zabbix_agentd ] && { echo "AÚN QUEDA ZABBIX (ruta típica)"; exit 1; }
+        echo "OK: Zabbix no presente"
+      args: { executable: /bin/bash }
+      register: postcheck
+      changed_when: false
+
+  post_tasks:
+    - name: Borrar llave temporal del controlador
+      ansible.builtin.file:
+        path: "{{ private_key_path }}"
+        state: absent
+      run_once: true
+      delegate_to: localhost
