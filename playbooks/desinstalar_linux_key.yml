@@ -1,15 +1,19 @@
 ---
-- name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + debug conexión)
+- name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + debug conexión + limpieza reforzada)
   hosts: a_desinstalar_zabbix_linux
   gather_facts: false
   become: true
 
   vars:
+    # Variables de Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
+
+    # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
+    # Parámetros de conexión
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -31,7 +35,7 @@
       run_once: true
       delegate_to: localhost
       vars: { ansible_python_interpreter: /usr/bin/python3 }
-      # no_log: true
+      # no_log: true   # actívalo al terminar de depurar
 
     - name: DEBUG destino (host/puerto)
       ansible.builtin.debug:
@@ -126,7 +130,7 @@
         state: absent
       when: ansible_os_family == "Suse"
 
-    # === Limpieza común de restos ===
+    # ==== Limpieza común de restos ====
     - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
@@ -137,47 +141,73 @@
         - /var/lib/zabbix
       ignore_errors: true
 
-    - name: Matar procesos Zabbix si siguen activos
+    # ==== Limpieza reforzada ====
+    - name: Detener/Deshabilitar/Enmascarar servicios Zabbix (systemd)
       ansible.builtin.shell: |
-        pids=$(pgrep -f 'zabbix[-_]agent') || true
-        if [ -n "$pids" ]; then
-          kill -9 $pids
-        fi
-      args:
-        executable: /bin/bash
+        set -euo pipefail
+        mapfile -t UNITS < <(systemctl list-unit-files 'zabbix*' --type=service --no-legend | awk '{print $1}')
+        for u in "${UNITS[@]}"; do
+          [ -n "$u" ] || continue
+          systemctl stop "$u" || true
+          systemctl disable "$u" || true
+          systemctl mask "$u" || true
+        done
+      args: { executable: /bin/bash }
       ignore_errors: true
 
-    - name: Buscar y eliminar binarios residuales de Zabbix en todo el sistema
+    - name: Matar procesos Zabbix y borrar ejecutables reales
       ansible.builtin.shell: |
-        find / -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null || true
-      args:
-        executable: /bin/bash
+        set -euo pipefail
+        PIDS=$(pgrep -f -a 'zabbix(_|-)?(agent|agent2|proxy)' || true)
+        if [ -n "$PIDS" ]; then
+          echo "$PIDS" 1>&2 || true
+          for pid in $(echo "$PIDS" | awk '{print $1}'); do
+            EXE=$(readlink -f "/proc/$pid/exe" || true)
+            kill -9 "$pid" 2>/dev/null || true
+            [ -n "$EXE" ] && [ -e "$EXE" ] && rm -f "$EXE" || true
+          done
+        fi
+      args: { executable: /bin/bash }
+      changed_when: true
       ignore_errors: true
 
-    - name: Eliminar binarios residuales en rutas típicas (por si acaso)
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /usr/sbin/zabbix_agentd
-        - /usr/local/sbin/zabbix_agentd
-        - /usr/bin/zabbix_agentd
+    - name: Eliminar unit files zabbix* y recargar systemd
+      ansible.builtin.shell: |
+        set -euo pipefail
+        rm -f /etc/systemd/system/zabbix* /usr/lib/systemd/system/zabbix* /lib/systemd/system/zabbix* 2>/dev/null || true
+        systemctl daemon-reload || true
+      args: { executable: /bin/bash }
       ignore_errors: true
 
-    - name: Verificación post-desinstalación
+    - name: Eliminar entradas de cron relacionadas con Zabbix
       ansible.builtin.shell: |
-        if pgrep -f 'zabbix[-_]agent' >/dev/null 2>&1; then
-          echo "AÚN QUEDA ZABBIX (proceso)"; exit 1
+        set -euo pipefail
+        if crontab -u root -l >/tmp/cron.root 2>/dev/null; then
+          sed -i '/zabbix/Id' /tmp/cron.root || true
+          crontab -u root /tmp/cron.root || true
+          rm -f /tmp/cron.root || true
         fi
-        if command -v zabbix_agentd >/dev/null 2>&1; then
-          echo "AÚN QUEDA ZABBIX (binario en PATH)"; exit 1
-        fi
-        if [ -e /usr/sbin/zabbix_agentd ] || [ -e /usr/local/sbin/zabbix_agentd ] || [ -e /usr/bin/zabbix_agentd ]; then
-          echo "AÚN QUEDA ZABBIX (binario en ruta típica)"; exit 1
-        fi
+        grep -Ilr --exclude-dir={.git,proc,sys} -e 'zabbix' /etc/cron* 2>/dev/null | xargs -r sed -i '/zabbix/Id'
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    - name: Buscar y eliminar binarios 'zabbix_agentd' en todo el sistema
+      ansible.builtin.shell: |
+        set -euo pipefail
+        find / -xdev -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null || true
+      args: { executable: /bin/bash }
+      ignore_errors: true
+
+    # ==== Verificación final robusta ====
+    - name: Verificación post-desinstalación (sin procesos/binarios ni units)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        pgrep -f 'zabbix(_|-)?(agent|agent2|proxy)' >/dev/null 2>&1 && { echo "AÚN QUEDA ZABBIX (proceso)"; exit 1; }
+        command -v zabbix_agentd >/dev/null 2>&1 && { echo "AÚN QUEDA ZABBIX (binario en PATH)"; exit 1; }
+        systemctl list-unit-files 'zabbix*' --type=service --no-legend | grep -q . && { echo "AÚN QUEDA ZABBIX (unit files)"; exit 1; }
+        [ -e /usr/sbin/zabbix_agentd ] || [ -e /usr/local/sbin/zabbix_agentd ] || [ -e /usr/bin/zabbix_agentd ] && { echo "AÚN QUEDA ZABBIX (ruta típica)"; exit 1; }
         echo "OK: Zabbix no presente"
-      args:
-        executable: /bin/bash
+      args: { executable: /bin/bash }
       register: postcheck
       changed_when: false
 
