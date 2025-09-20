@@ -1,19 +1,19 @@
 ---
-- name: Desinstalar Zabbix en Linux (con llave SSH desde Encuesta, multi-OS)
+- name: Desinstalar Zabbix en Linux (LLAVE desde Encuesta, multi-OS + debug conexión)
   hosts: a_desinstalar_zabbix_linux
-  gather_facts: false          # <- importante: NO recolectar facts antes de crear la llave
+  gather_facts: false          # ¡Importante! No intentes conectar antes de crear la llave
   become: true
 
   vars:
-    # Variables que llegan desde la Encuesta de AAP
+    # Variables que llegan desde la Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
 
-    # Ruta única para la llave temporal en el controlador
+    # Ruta única de la llave temporal en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
-    # Ajustes de conexión aplicados a todo el play
+    # Parámetros de conexión usados por Ansible
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -29,28 +29,70 @@
 
     - name: Escribir llave privada temporal en el nodo controlador
       ansible.builtin.copy:
-        # Si tu encuesta entrega "\n" literales, esto los convierte a saltos reales
+        # Si la encuesta trae "\n" literales, conviértelos a saltos reales
         content: "{{ (llave_ssh | replace('\\r','') | replace('\\n','\n')) }}"
         dest: "{{ private_key_path }}"
         mode: '0600'
       run_once: true
       delegate_to: localhost
-      # no_log: true  # ← actívalo cuando termines de depurar
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+      # no_log: true   # ← Activa cuando termines de depurar
 
-    - name: (Opcional) Esperar que el puerto SSH esté abierto
-      ansible.builtin.wait_for:
-        host: "{{ inventory_hostname }}"
-        port: "{{ ansible_port }}"
-        timeout: 10
+    - name: DEBUG destino (host/puerto)
+      ansible.builtin.debug:
+        msg: "Voy a conectar a {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}:{{ ansible_port | default(puerto_ssh) }}"
+
+    # Prueba con netcat si está disponible
+    - name: Probar apertura de puerto con netcat (si existe)
+      ansible.builtin.command: >
+        sh -lc 'command -v nc >/dev/null 2>&1 &&
+        nc -vz {{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}
+               {{ ansible_port | default(puerto_ssh) }} || true'
       delegate_to: localhost
+      register: nc_test
+      changed_when: false
+      failed_when: false
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Resultado netcat
+      ansible.builtin.debug:
+        var: nc_test.stderr
+
+    # Fallback por /dev/tcp en caso de que no haya nc o falle
+    - name: Probar apertura de puerto con /dev/tcp (fallback)
+      ansible.builtin.shell: >
+        timeout 5 bash -lc 'echo >/dev/tcp/{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}/{{ ansible_port | default(puerto_ssh) }}'
+      delegate_to: localhost
+      register: devtcp_test
+      changed_when: false
+      failed_when: false
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Resultado /dev/tcp (fallback)
+      ansible.builtin.debug:
+        msg: "{{ 'OK' if devtcp_test.rc == 0 else 'FAIL' }}"
+
+    - name: Esperar que el puerto SSH esté abierto
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}"
+        port: "{{ ansible_port | default(puerto_ssh) | int }}"
+        timeout: 45
+        connect_timeout: 5
+        state: started
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
 
   tasks:
-    # === AQUÍ recolectamos facts ya con la llave lista ===
+    # Recolectamos facts SOLO después de que la conexión ya está lista
     - name: Recolectar facts ahora que la conexión está configurada
       ansible.builtin.setup:
 
-    # --- Ubuntu / Debian ---
-    - name: Detener servicios de Zabbix (Debian/Ubuntu)
+    # === Debian / Ubuntu ===
+    - name: Detener servicios Zabbix (Debian/Ubuntu)
       ansible.builtin.service:
         name: "{{ item }}"
         state: stopped
@@ -58,7 +100,7 @@
       ignore_errors: true
       when: ansible_os_family == "Debian"
 
-    - name: Desinstalar Zabbix en Debian/Ubuntu
+    - name: Desinstalar Zabbix (Debian/Ubuntu)
       ansible.builtin.apt:
         name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
@@ -66,8 +108,8 @@
         update_cache: true
       when: ansible_os_family == "Debian"
 
-    # --- RedHat / CentOS ---
-    - name: Detener servicios de Zabbix (RedHat/CentOS)
+    # === RedHat / CentOS ===
+    - name: Detener servicios Zabbix (RedHat/CentOS)
       ansible.builtin.service:
         name: "{{ item }}"
         state: stopped
@@ -75,14 +117,14 @@
       ignore_errors: true
       when: ansible_os_family == "RedHat"
 
-    - name: Desinstalar Zabbix en RedHat/CentOS
+    - name: Desinstalar Zabbix (RedHat/CentOS)
       ansible.builtin.yum:
         name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
       when: ansible_os_family == "RedHat"
 
-    # --- SUSE ---
-    - name: Detener servicios de Zabbix (SUSE)
+    # === SUSE ===
+    - name: Detener servicios Zabbix (SUSE)
       ansible.builtin.service:
         name: "{{ item }}"
         state: stopped
@@ -90,13 +132,13 @@
       ignore_errors: true
       when: ansible_os_family == "Suse"
 
-    - name: Desinstalar Zabbix en SUSE
+    - name: Desinstalar Zabbix (SUSE)
       community.general.zypper:
         name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
       when: ansible_os_family == "Suse"
 
-    # --- Limpieza común ---
+    # === Limpieza común ===
     - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
@@ -123,4 +165,4 @@
         path: "{{ private_key_path }}"
         state: absent
       run_once: true
-      delegate_to: local_
+      delegate_to: localhost
