@@ -88,7 +88,7 @@
         state: absent
         purge: true
         autoremove: true
-        update_cache: true
+        update_cache: "{{ apt_update_cache | default(false) }}"
       when: ansible_facts['distribution'] in ['Ubuntu', 'Debian']
       become: true
 
