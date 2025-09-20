@@ -1,68 +1,103 @@
 ---
 - name: Desinstalar Zabbix en Linux (con llave SSH desde Encuesta, multi-OS)
   hosts: a_desinstalar_zabbix_linux
-  gather_facts: true     # aquí sí necesitamos facts para detectar OS
+  gather_facts: false          # <- importante: NO recolectar facts antes de crear la llave
   become: true
 
   vars:
+    # Variables que llegan desde la Encuesta de AAP
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
+
+    # Ruta única para la llave temporal en el controlador
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
+    # Ajustes de conexión aplicados a todo el play
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
   pre_tasks:
-    - name: Validar variable 'llave_ssh'
+    - name: Validar que 'llave_ssh' esté definida y no vacía
       ansible.builtin.assert:
         that:
           - llave_ssh is defined
           - (llave_ssh | length) > 10
-        fail_msg: "La variable 'llave_ssh' está vacía. Revisa Encuesta."
+        fail_msg: "Variable 'llave_ssh' vacía o no definida. Revisa la Encuesta."
 
-    - name: Crear llave temporal en el controlador
+    - name: Escribir llave privada temporal en el nodo controlador
       ansible.builtin.copy:
+        # Si tu encuesta entrega "\n" literales, esto los convierte a saltos reales
         content: "{{ (llave_ssh | replace('\\r','') | replace('\\n','\n')) }}"
         dest: "{{ private_key_path }}"
         mode: '0600'
       run_once: true
       delegate_to: localhost
+      # no_log: true  # ← actívalo cuando termines de depurar
+
+    - name: (Opcional) Esperar que el puerto SSH esté abierto
+      ansible.builtin.wait_for:
+        host: "{{ inventory_hostname }}"
+        port: "{{ ansible_port }}"
+        timeout: 10
+      delegate_to: localhost
 
   tasks:
+    # === AQUÍ recolectamos facts ya con la llave lista ===
+    - name: Recolectar facts ahora que la conexión está configurada
+      ansible.builtin.setup:
+
     # --- Ubuntu / Debian ---
+    - name: Detener servicios de Zabbix (Debian/Ubuntu)
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+      loop: [ 'zabbix-agent', 'zabbix-agent2' ]
+      ignore_errors: true
+      when: ansible_os_family == "Debian"
+
     - name: Desinstalar Zabbix en Debian/Ubuntu
       ansible.builtin.apt:
-        name:
-          - zabbix-agent
-          - zabbix-agent2
+        name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
         purge: true
         update_cache: true
       when: ansible_os_family == "Debian"
 
     # --- RedHat / CentOS ---
+    - name: Detener servicios de Zabbix (RedHat/CentOS)
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+      loop: [ 'zabbix-agent', 'zabbix-agent2' ]
+      ignore_errors: true
+      when: ansible_os_family == "RedHat"
+
     - name: Desinstalar Zabbix en RedHat/CentOS
       ansible.builtin.yum:
-        name:
-          - zabbix-agent
-          - zabbix-agent2
+        name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
       when: ansible_os_family == "RedHat"
 
     # --- SUSE ---
+    - name: Detener servicios de Zabbix (SUSE)
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+      loop: [ 'zabbix-agent', 'zabbix-agent2' ]
+      ignore_errors: true
+      when: ansible_os_family == "Suse"
+
     - name: Desinstalar Zabbix en SUSE
       community.general.zypper:
-        name:
-          - zabbix-agent
-          - zabbix-agent2
+        name: [ 'zabbix-agent', 'zabbix-agent2' ]
         state: absent
       when: ansible_os_family == "Suse"
 
-    # --- Limpieza de restos ---
-    - name: Eliminar archivos de Zabbix
+    # --- Limpieza común ---
+    - name: Eliminar archivos y directorios de Zabbix
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
@@ -75,17 +110,17 @@
     - name: Verificación post-desinstalación
       ansible.builtin.shell: |
         if command -v zabbix_agentd >/dev/null 2>&1 || pgrep -f 'zabbix[-_]agent' >/dev/null 2>&1; then
-          echo "Zabbix AÚN está presente"; exit 1
+          echo "AÚN QUEDA ZABBIX"; exit 1
         else
-          echo "OK: Zabbix no encontrado"
+          echo "OK: Zabbix no presente"
         fi
       register: postcheck
       changed_when: false
 
   post_tasks:
-    - name: Borrar llave temporal
+    - name: Borrar llave temporal del controlador
       ansible.builtin.file:
         path: "{{ private_key_path }}"
         state: absent
       run_once: true
-      delegate_to: localhost
+      delegate_to: local_
