@@ -5,15 +5,11 @@
   become: true
 
   vars:
-    # Variables de Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
-
-    # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
 
-    # Parámetros de conexión
     ansible_user: "{{ usuario_ssh }}"
     ansible_port: "{{ puerto_ssh }}"
     ansible_ssh_private_key_file: "{{ private_key_path }}"
@@ -35,7 +31,7 @@
       run_once: true
       delegate_to: localhost
       vars: { ansible_python_interpreter: /usr/bin/python3 }
-      # no_log: true   # actívalo al terminar de depurar
+      # no_log: true
 
     - name: DEBUG destino (host/puerto)
       ansible.builtin.debug:
@@ -148,14 +144,14 @@
           kill -9 $pids
         fi
       args:
-        warn: false
+        executable: /bin/bash
       ignore_errors: true
 
     - name: Buscar y eliminar binarios residuales de Zabbix en todo el sistema
       ansible.builtin.shell: |
-        find / -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null
+        find / -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null || true
       args:
-        warn: false
+        executable: /bin/bash
       ignore_errors: true
 
     - name: Eliminar binarios residuales en rutas típicas (por si acaso)
@@ -170,11 +166,18 @@
 
     - name: Verificación post-desinstalación
       ansible.builtin.shell: |
-        if command -v zabbix_agentd >/dev/null 2>&1 || pgrep -f 'zabbix[-_]agent' >/dev/null 2>&1; then
-          echo "AÚN QUEDA ZABBIX"; exit 1
-        else
-          echo "OK: Zabbix no presente"
+        if pgrep -f 'zabbix[-_]agent' >/dev/null 2>&1; then
+          echo "AÚN QUEDA ZABBIX (proceso)"; exit 1
         fi
+        if command -v zabbix_agentd >/dev/null 2>&1; then
+          echo "AÚN QUEDA ZABBIX (binario en PATH)"; exit 1
+        fi
+        if [ -e /usr/sbin/zabbix_agentd ] || [ -e /usr/local/sbin/zabbix_agentd ] || [ -e /usr/bin/zabbix_agentd ]; then
+          echo "AÚN QUEDA ZABBIX (binario en ruta típica)"; exit 1
+        fi
+        echo "OK: Zabbix no presente"
+      args:
+        executable: /bin/bash
       register: postcheck
       changed_when: false
 
