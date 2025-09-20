@@ -80,7 +80,6 @@
       vars: { ansible_python_interpreter: /usr/bin/python3 }
 
   tasks:
-    # Recolectar facts solo después de que la conexión esté lista
     - name: Recolectar facts ahora que la conexión está configurada
       ansible.builtin.setup:
 
@@ -148,15 +147,13 @@
         if [ -n "$pids" ]; then
           kill -9 $pids
         fi
-      args:
-        warn: false
+      warn: false
       ignore_errors: true
 
     - name: Buscar y eliminar binarios residuales de Zabbix en todo el sistema
       ansible.builtin.shell: |
         find / -type f -name 'zabbix_agentd' -exec rm -f {} \; 2>/dev/null
-      args:
-        warn: false
+      warn: false
       ignore_errors: true
 
     - name: Eliminar binarios residuales en rutas típicas (por si acaso)
