@@ -18,9 +18,9 @@
         that:
           - contrasena_ssh is defined
           - (contrasena_ssh | length) > 0
-        fail_msg: "No llegó la variable 'contrasena_ssh' desde la Encuesta."
-      no_log: true
+        fail_msg: "No llegó la variable 'contrasena_ssh' desde la Encuesta (vacía o indefinida)."
       run_once: true
+      no_log: false   # <- visible (sin exponer la contraseña)
 
     - name: (Opcional) Definir become_password si se proporcionó
       set_fact:
