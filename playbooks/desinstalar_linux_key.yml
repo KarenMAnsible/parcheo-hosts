@@ -3,12 +3,17 @@
   hosts: a_desinstalar_zabbix_linux
   gather_facts: false
   become: true
+  become_method: sudo
+  become_user: root
 
   vars:
     # Encuesta
     usuario_ssh: "{{ usuario_ssh }}"
     puerto_ssh: "{{ puerto_ssh | default(22) }}"
     llave_ssh: "{{ llave_ssh }}"
+
+    # >>> Campo de encuesta NO obligatorio (nuevo) <<<
+    password_sudo: "{{ password_sudo | default('') }}"
 
     # Llave temporal única en el Controller
     private_key_path: "/tmp/aap_key_{{ awx_job_id | default(ansible_date_time.epoch) }}.pem"
@@ -35,6 +40,11 @@
       run_once: true
       delegate_to: localhost
       vars: { ansible_python_interpreter: /usr/bin/python3 }
+
+    - name: (Nuevo) Definir ansible_become_pass solo si la encuesta trae valor
+      ansible.builtin.set_fact:
+        ansible_become_pass: "{{ password_sudo }}"
+      when: password_sudo is defined and (password_sudo | length) > 0
 
     - name: Mostrar destino de conexión (DEBUG)
       ansible.builtin.debug:
