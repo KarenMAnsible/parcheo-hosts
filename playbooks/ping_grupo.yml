@@ -1,8 +1,37 @@
 ---
-- name: Ping a un grupo elegido
+- name: Ping seguro por grupo (sin requerir Python)
   hosts: "{{ grupo_objetivo }}"
   gather_facts: false
 
+  vars:
+    # Si quieres silenciar advertencias de intérprete (opcional):
+    ansible_python_interpreter: auto_silent
+
   tasks:
-    - name: Hacer ping
+    - name: Detectar Python3
+      raw: "command -v python3 || true"
+      register: py3
+      changed_when: false
+      failed_when: false
+
+    - name: Detectar Python2 (por si acaso)
+      raw: "command -v python || true"
+      register: py2
+      changed_when: false
+      failed_when: false
+
+    - name: Usar ping de Ansible si hay Python
       ansible.builtin.ping:
+      when: py3.stdout != "" or py2.stdout != ""
+
+    - name: Conectividad por SSH (fallback sin Python)
+      raw: "sh -c 'echo PONG && uname -s >/dev/null 2>&1 || true'"
+      register: pong_raw
+      changed_when: false
+      failed_when: pong_raw.rc != 0
+      when: py3.stdout == "" and py2.stdout == ""
+
+    - name: Mostrar resultado en hosts sin Python
+      debug:
+        msg: "Host sin Python: conectividad OK por SSH → {{ pong_raw.stdout | default('PONG') }}"
+      when: py3.stdout == "" and py2.stdout == ""
