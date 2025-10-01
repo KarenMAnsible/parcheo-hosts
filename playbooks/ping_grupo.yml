@@ -1,0 +1,8 @@
+---
+- name: Ping a un grupo elegido
+  hosts: "{{ grupo_objetivo }}"
+  gather_facts: false
+
+  tasks:
+    - name: Hacer ping
+      ansible.builtin.ping:
