@@ -1,6 +1,6 @@
 ---
 - name: Escanear vulnerabilidades Apache (Log4j / Struts) en Windows
-  hosts: windows        
+  hosts: Windows        
   gather_facts: no
 
   vars:
