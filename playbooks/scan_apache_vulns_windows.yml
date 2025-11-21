@@ -4,8 +4,12 @@
   gather_facts: no
 
   vars:
-    scan_path: "C:\\"
-    output_folder: "C:\\Temp"
+  scan_paths:
+    - 'C:\\apps'
+    - 'C:\\Program Files'
+    - 'C:\\Program Files (x86)'
+    - 'D:\\tomcat'
+    - 'D:\\weblogic' 
 
   tasks:
     - name: Crear carpeta de scripts
@@ -27,7 +31,7 @@
       ansible.windows.win_shell: >
         powershell -ExecutionPolicy Bypass
         -File C:\Scripts\Test-ApacheVulns.ps1
-        -Paths {{ scan_path }}
+        -Paths {{ scan_paths | join(',') }}
         -OutputFile "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
       register: scan_cmd
 
