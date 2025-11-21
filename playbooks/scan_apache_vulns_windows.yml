@@ -11,6 +11,8 @@
       - 'D:\\tomcat'
       - 'D:\\weblogic' 
 
+    output_folder: 'C:\\Temp'
+
   tasks:
     - name: Crear carpeta de scripts
       ansible.windows.win_file:
