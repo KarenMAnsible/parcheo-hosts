@@ -1,6 +1,6 @@
 ---
 - name: Escanear vulnerabilidades Apache (Log4j / Struts) en Windows
-  hosts: windows        # <-- cambia este grupo al que uses para tus servers Windows
+  hosts: "{{ target_host }}"        
   gather_facts: no
 
   vars:
