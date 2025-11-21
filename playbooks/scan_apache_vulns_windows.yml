@@ -4,12 +4,12 @@
   gather_facts: no
 
   vars:
-  scan_paths:
-    - 'C:\\apps'
-    - 'C:\\Program Files'
-    - 'C:\\Program Files (x86)'
-    - 'D:\\tomcat'
-    - 'D:\\weblogic' 
+    scan_paths:
+      - 'C:\\apps'
+      - 'C:\\Program Files'
+      - 'C:\\Program Files (x86)'
+      - 'D:\\tomcat'
+      - 'D:\\weblogic' 
 
   tasks:
     - name: Crear carpeta de scripts
