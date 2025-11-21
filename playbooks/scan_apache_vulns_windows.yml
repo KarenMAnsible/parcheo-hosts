@@ -44,7 +44,7 @@
 
     - name: Traer archivo de resultados al controlador
       ansible.windows.win_fetch:
-        src: "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
+        src: '{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt'
         dest: "./resultados_apache/"
         flat: no
 
