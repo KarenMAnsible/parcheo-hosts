@@ -32,8 +32,8 @@
     - name: Ejecutar script de validación
       ansible.windows.win_shell: >
         powershell -ExecutionPolicy Bypass
-        -File C:\Scripts\Test-ApacheVulns.ps1
-        -Paths {{ scan_paths | join(',') }}
+        -File "C:\Scripts\Test-ApacheVulns.ps1"
+        -Paths -Paths {{ scan_paths | map('regex_replace', '^(.*)$', '\"\1\"') | join(',') }}
         -OutputFile "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
       register: scan_cmd
 
