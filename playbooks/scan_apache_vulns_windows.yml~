@@ -1,17 +1,17 @@
 ---
 - name: Escanear vulnerabilidades Apache (Log4j / Struts) en Windows
-  hosts: Windows              # Nombre del grupo en tu inventario
+  hosts: Windows        
   gather_facts: no
 
   vars:
     scan_paths:
-      - 'C:\apps'
-      - 'C:\Program Files'
-      - 'C:\Program Files (x86)'
-      - 'D:\tomcat'
-      - 'D:\weblogic'
+      - 'C:\\apps'
+      - 'C:\\Program Files'
+      - 'C:\\Program Files (x86)'
+      - 'D:\\tomcat'
+      - 'D:\\weblogic' 
 
-    output_folder: 'C:\Temp'
+    output_folder: 'C:\\Temp'
 
   tasks:
     - name: Crear carpeta de scripts
@@ -33,7 +33,7 @@
       ansible.windows.win_shell: >
         powershell -ExecutionPolicy Bypass
         -File "C:\Scripts\Test-ApacheVulns.ps1"
-        -Paths "{{ scan_paths | join(',') }}"
+        -Paths -Paths {{ scan_paths | map('regex_replace', '^(.*)$', '\"\1\"') | join(',') }}
         -OutputFile "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
       register: scan_cmd
 
@@ -50,7 +50,7 @@
 
     - name: Traer archivo de resultados al controlador
       ansible.builtin.fetch:
-        src: "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
+        src: '{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt'
         dest: "./resultados_apache/"
         flat: yes
 

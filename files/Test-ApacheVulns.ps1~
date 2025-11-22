@@ -1,37 +1,14 @@
 param(
-    # Rutas separadas por comas, por ejemplo:
-    # "C:\apps,C:\Program Files,C:\Program Files (x86),D:\tomcat"
-    [string]$Paths = "C:\",
-
-    # Ruta completa del archivo de salida
+    [string[]]$Paths = @("C:\"),
     [string]$OutputFile
 )
 
-if (-not $OutputFile -or $OutputFile.Trim() -eq "") {
+if (-not $OutputFile) {
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
     $OutputFile = "C:\Temp\Vulnerabilidades_Apache_$timestamp.txt"
 }
 
-# Normalizar lista de rutas (convertir string en array)
-$PathsList = @()
-foreach ($raw in ($Paths -split ',')) {
-    $p = $raw.Trim()
-
-    # Quitar comillas al inicio / final si vienen
-    if ($p.StartsWith('"') -and $p.EndsWith('"') -and $p.Length -ge 2) {
-        $p = $p.Substring(1, $p.Length - 2)
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($p)) {
-        $PathsList += $p
-    }
-}
-
-if (-not $PathsList -or $PathsList.Count -eq 0) {
-    $PathsList = @("C:\")
-}
-
-# Asegurar carpeta destino del archivo
+# Crear carpeta destino si no existe
 $dir = Split-Path $OutputFile -Parent
 if (-not (Test-Path $dir)) {
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
@@ -40,7 +17,7 @@ if (-not (Test-Path $dir)) {
 function Test-Log4jFile {
     param([System.IO.FileInfo]$File)
 
-    $name    = $File.Name
+    $name   = $File.Name
     $version = $null
     $status  = "Desconocido"
     $detalle = "No se pudo determinar la versión desde el nombre de archivo."
@@ -58,19 +35,19 @@ function Test-Log4jFile {
 
             if ($isCore -and $v -ge [version]"2.0.0" -and $v -lt [version]"2.15.0") {
                 $status  = "VULNERABLE (CVE-2021-44228)"
-                $detalle = "log4j-core $version afectado: actualizar a 2.17.x o superior."
+                $detalle = "log4j-core $version afectado: actualizar a 2.17.x"
             }
             elseif ($isCore -and $v -ge [version]"2.15.0" -and $v -lt [version]"2.17.0") {
                 $status  = "Revisar (parcialmente mitigado)"
-                $detalle = "log4j-core $version con mitigación parcial, actualizar a 2.17.x o superior."
+                $detalle = "log4j-core $version tiene mitigación parcial, actualizar a 2.17.x"
             }
             else {
-                $status  = "OK (fuera del rango principal afectado)"
-                $detalle = "log4j-core $version fuera del rango principal vulnerable; revisar configuración."
+                $status  = "OK"
+                $detalle = "log4j-core $version fuera del rango vulnerable."
             }
         } catch {
             $status  = "Desconocido"
-            $detalle = "Error procesando la versión ($versionString)."
+            $detalle = "Error procesando versión."
         }
     }
 
@@ -86,12 +63,11 @@ function Test-Log4jFile {
 function Test-StrutsFile {
     param([System.IO.FileInfo]$File)
 
-    $name    = $File.Name
+    $name   = $File.Name
     $version = $null
     $status  = "Desconocido"
-    $detalle = "No se pudo determinar la versión desde el nombre de archivo."
+    $detalle = "No se pudo determinar la versión desde el nombre."
 
-    # Ejemplo: struts2-core-2.3.32.jar
     $regex = [regex]'struts2-core-(?<ver>\d+\.\d+(\.\d+)*)\.jar'
     $m = $regex.Match($name)
     if ($m.Success) {
@@ -100,34 +76,23 @@ function Test-StrutsFile {
             $v = [version]$versionString
             $version = $versionString
 
-            # CVE-2017-12611:
-            #   2.0.0/2.0.1–2.3.33 y 2.5–2.5.10/2.5.10.1
             $vuln12611 = ($v -ge [version]"2.0.0" -and $v -le [version]"2.3.33") -or
                          ($v -ge [version]"2.5.0" -and $v -le [version]"2.5.10.1")
 
-            # CVE-2018-11776:
-            #   2.3–2.3.34 y 2.5–2.5.16
             $vuln11776 = ($v -ge [version]"2.3.0" -and $v -le [version]"2.3.34") -or
                          ($v -ge [version]"2.5.0" -and $v -le [version]"2.5.16")
 
             if ($vuln12611 -or $vuln11776) {
                 $status = "VULNERABLE"
-                $detList = @()
-                if ($vuln12611) { $detList += "CVE-2017-12611" }
-                if ($vuln11776) { $detList += "CVE-2018-11776" }
-                $detalle = "struts2-core $version afectado: " + ($detList -join ", ") + ". Actualizar a 2.3.35 o 2.5.17+."
-            }
-            elseif (($v -ge [version]"2.3.35") -or ($v -ge [version]"2.5.17")) {
-                $status  = "OK (incluye fixes para estas CVE)"
-                $detalle = "struts2-core $version incluye correcciones para 2017-12611 y 2018-11776."
+                $detalle = "struts2-core $version afectado. Actualizar a 2.3.35 o 2.5.17+."
             }
             else {
-                $status  = "Revisar manualmente"
-                $detalle = "struts2-core $version fuera de rangos típicos; revisar notas de versión."
+                $status  = "OK"
+                $detalle = "struts2-core $version no en rangos vulnerables."
             }
         } catch {
             $status  = "Desconocido"
-            $detalle = "Error procesando la versión ($versionString)."
+            $detalle = "No se pudo procesar la versión."
         }
     }
 
@@ -142,10 +107,8 @@ function Test-StrutsFile {
 
 $results = @()
 
-foreach ($path in $PathsList) {
-    if (-not (Test-Path $path)) {
-        continue
-    }
+foreach ($path in $Paths) {
+    if (-not (Test-Path $path)) { continue }
 
     try {
         $files = Get-ChildItem -Path $path -Recurse -File -ErrorAction SilentlyContinue
@@ -158,24 +121,20 @@ foreach ($path in $PathsList) {
                 $results += Test-StrutsFile -File $f
             }
         }
-    } catch {
-        # ignorar errores de acceso y seguir
-        continue
-    }
+    } catch {}
 }
 
-"Reporte de validación de bibliotecas Apache (Log4j / Struts)" | Out-File -FilePath $OutputFile -Encoding UTF8
+"Reporte de validación de bibliotecas Apache" | Out-File -FilePath $OutputFile -Encoding UTF8
 "Servidor: $env:COMPUTERNAME" | Out-File -FilePath $OutputFile -Append
 "Fecha: $(Get-Date)" | Out-File -FilePath $OutputFile -Append
-"Rutas escaneadas: $($PathsList -join ', ')" | Out-File -FilePath $OutputFile -Append
 "`r`n" | Out-File -FilePath $OutputFile -Append
 
 if ($results.Count -eq 0) {
-    "No se encontraron archivos log4j*.jar ni struts2-core*.jar en las rutas indicadas." | Out-File -FilePath $OutputFile -Append
+    "No se encontraron archivos vulnerables en las rutas indicadas." | Out-File -FilePath $OutputFile -Append
 } else {
     $results |
         Sort-Object TipoVulnerabilidad, Archivo |
-        Format-Table TipoVulnerabilidad, Archivo, Version, Estado, Detalle -AutoSize |
+        Format-Table -AutoSize |
         Out-String |
         Out-File -FilePath $OutputFile -Append
 }
