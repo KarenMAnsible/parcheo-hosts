@@ -34,7 +34,8 @@
         powershell -ExecutionPolicy Bypass
         -File "C:\Scripts\Test-ApacheVulns.ps1"
         -Paths "{{ scan_paths | join(',') }}"
-        -OutputFile "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
+        -OutputFile "{{ output_folder }}/ApacheVulns_{{ inventory_hostname }}.txt"
+
       register: scan_cmd
 
     - name: Mostrar salida rápida en el job
@@ -50,7 +51,7 @@
 
     - name: Traer archivo de resultados al controlador
       ansible.builtin.fetch:
-        src: "{{ output_folder }}\ApacheVulns_{{ inventory_hostname }}.txt"
+        src: "{{ output_folder }}/ApacheVulns_{{ inventory_hostname }}.txt"
         dest: "./resultados_apache/"
         flat: yes
 
